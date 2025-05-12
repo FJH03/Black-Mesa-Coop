@@ -1,0 +1,186 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Office Complex"
+	"nextmap" "bm_c1a2b"
+	"intro_type" "none"
+	"equipment"
+	{
+		"item"	"item_suit"
+		"item"	"item_weapon_crowbar"
+		"item"	"item_weapon_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_weapon_frag"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname" "items_at_start"
+		}
+		// delay backup timer vent explosion to game start
+		"modify"
+		{
+			"classname"		"logic_timer"
+			"targetname"	"backup_timer"
+			"set"
+			{
+				"StartDisabled"	"1"
+			}
+		}
+		"add"
+		{
+			"classname"		"logic_auto"
+			"targetname"	"backup_timer_delay"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"backup_timer"
+					"input"		"Enable"
+				}
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// remove blockers
+		"delete"
+		{
+			"targetname" "oc_elev_block"
+		}
+		"delete"
+		{
+			"targetname" "storage_vent_clip"
+		}
+		// dont close elevator doors
+		"modify"
+		{
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "elevator_door_right"
+					"input" "Close"
+				}
+				"remove"
+				{
+					"target" "elevator_door_left"
+					"input" "Close"
+				}
+			}
+		}
+		// fix player killer laser for mp
+		"modify"
+		{
+			"targetname" "puzzle_death"
+			"set"
+			{
+				"classname" "trigger_hurt"
+				"damage" "9999"
+				"damagetype" "1024"
+			}
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "player_killer"
+				}
+				"modify"
+				{
+					"output" "OnTrigger"
+					"replace"
+					{
+						"output" "OnStartTouch"
+					}
+				}
+			}
+		}
+		// block going past changelevel
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_changelevel"
+					"map" "bm_c1a2b"
+				}
+			}
+		}
+		// Set up NPC persistance
+		// TODO fix
+//		"add"
+//		{
+//			"classname" "env_global"
+//			"targetname" "grd01_following_c1a2a_global"
+//			"globalstate" "grd01_following_c1a2a"
+//		}
+//		"modify"
+//		{
+//			"targetname" "Grd01_storage"
+//			"outputs"
+//			{
+//				"add"
+//				{
+//					"target" "grd01_following_c1a2a_global"
+//					"output" "OnDeath"
+//					"input"	"TurnOff"
+//				}
+//			}
+//		}
+//		"add"
+//		{
+//			"classname" "trigger_once"
+//			"targetname" "grd01_following_c1a2a_global_trig"
+//			"filtername" "grd01_filter"
+//			"spawnflags" "2"
+//			"functions"
+//			{
+//				"copy_model"
+//				{
+//					"hammerid" "1257106"
+//				}
+//			}
+//			"outputs"
+//			{
+//				"add"
+//				{
+//					"target" "grd01_following_c1a2a_global"
+//					"output" "OnTrigger"
+//					"input"	"TurnOn"
+//				}
+//			}
+//		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"160 -112 16"
+			"angles"	"0 90 0"
+		}
+		"shotgun_pickup"
+		{
+			"origin"	"-2390 -1650 10"
+			"angles"	"5 55 0"
+			"triggerid"	"relay_headcrabscare"
+			"output"	"OnTrigger"
+		}
+	}
+}

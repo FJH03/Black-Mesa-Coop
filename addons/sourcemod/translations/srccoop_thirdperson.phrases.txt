@@ -1,0 +1,36 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"thirdperson blocked"
+	{
+		"en"			"Thirdperson mode is currently disabled."
+		"ru"			"Режим от третьего лица отключен."
+	}
+
+	"thirdperson enter"
+	{
+		"en"			"You are now in thirdperson mode."
+		"ru"			"Вы в режиме от третьего лица."
+	}
+
+	"thirdperson exit"
+	{
+		"en"			"You are no longer in thirdperson mode."
+		"ru"			"Вы теперь не от третьего лица."
+	}
+
+	/* Menu */
+
+	"toggle thirdperson"
+	{
+		"en"			"Toggle thirdperson"
+		"ru"			"Переключить режим третьего лица."
+	}
+
+}

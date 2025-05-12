@@ -1,0 +1,111 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Unforeseen Consequences"
+	"nextmap" "bm_c1a1c"
+	"equipment"
+	{
+		"health" "95"
+		"item" "item_suit"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname"	"global_newgame_spawner_suit"
+		}
+		"modify"
+		{
+			"classname" "logic_auto"
+			"hammerid"	"4478144"
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "!player"
+					"input" "SetHealth"
+				}
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+				"delay_output" "OnNewGame"
+			}
+		}
+		// door close trigger
+		"delete"
+		{
+			"hammerid" "4708993"
+		}
+		// entity killer + player blocker enabler trigger
+		"delete"
+		{
+			"hammerid" "3788238"
+		}
+		// prepare changelevel touch trigger
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a1c"
+			"set"
+			{
+				"targetname" ""
+			}
+			"functions"
+			{
+				"copy_model"
+				{
+					"hammerid" "3389674"
+				}
+			}
+		}
+		// block players from going past the changelevel trigger
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"hammerid" "3389674"
+				}
+			}
+		}
+		// delete trigger that replays barney scene
+		"delete"
+		{
+			"hammerid"	"3010159"
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-1330 1806 296"
+			"angles"	"0 270 0"
+		}
+		"hall"
+		{
+			"origin"	"450 2600 420"
+			"angles"	"-4.5 -90 0"
+			"triggerid"	"2390983"
+			"output"	"OnTrigger"
+		}
+		"lab_crowbar"
+		{
+			"origin"	"220 1364 493"
+			"angles"	"0 90 0"
+			"triggerid"	"3361788"
+			"output"	"OnPressed"
+			"bringall"	"1"
+		}
+	}
+}

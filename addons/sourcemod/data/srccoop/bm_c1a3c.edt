@@ -1,0 +1,185 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "\"We Got Hostiles!\""
+	"nextmap" "bm_c1a3a"
+	"intro_type"	"none"
+	"equipment"
+	{
+		"item"	"item_suit"
+		"item"	"item_weapon_crowbar"
+		"item"	"item_weapon_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_weapon_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_weapon_mp5"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_weapon_frag"
+		"item"	"item_weapon_frag"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname" "/^(suit|weapons|ammo)$/"
+		}
+		// open elevator doors at map start
+		"add"
+		{
+			"classname"		"logic_auto"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"c1a3b-c1a3c-elevator_doorleft"
+					"input"		"Open"
+				}
+				"add"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"c1a3b-c1a3c-elevator_doorright"
+					"input"		"Open"
+				}
+			}
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname" "trigger_multiple"
+			"OnStartTouch" "/^break_relayTrigger/"
+			"functions"
+			{
+				"delay_output" "OnStartTouch"
+			}
+			"outputs"
+			{
+				"modify"
+				{
+					"replace"
+					{
+						"timestofire" "1"
+					}
+				}
+			}
+		}
+		"modify"
+		{
+			"classname" "logic_auto"
+			"OnMapSpawn" "/^faf_songPlaySound/"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// set elevator position
+		"modify"
+		{
+			"targetname"	"c1a3b-c1a3c-elevator"
+			"set"
+			{
+				"spawnpos"	"1"
+			}
+		}
+		// disable elevator button
+		"modify"
+		{
+			"classname"		"func_button"
+			"targetname"	"top_button"
+			"outputs"
+			{
+				"remove"
+				{
+					"output"	"OnPressed"
+				}
+			}
+		}
+		// blocker
+		"delete"
+		{
+			"targetname" "block_player"
+		}
+		// global for return to c1a3a
+		"create"
+		{
+			"classname" "env_global"
+			"targetname" "c1a3c_c1a3a_global"
+			"globalstate" "c1a3c_c1a3a"
+		}
+		// block changelevel area
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_changelevel"
+					"map" "bm_c1a3a"
+				}
+			}
+		}
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a3a"
+			"functions"
+			{
+				// expand changelevel
+				"copy_model"
+				{
+					"classname" "trigger_transition"
+					"targetname" "bm_c1a3c-bm_c1a3a" 
+				}
+			}
+			"outputs"
+			{
+				// turn on the global
+				"add"
+				{
+					"output" "OnChangeLevel"
+					"target" "c1a3c_c1a3a_global"
+					"input" "TurnOn"
+					"delay" "-1"
+				}
+			}
+		}
+		// remove music fade when reaching far enough into the vents
+		"remove"
+		{
+			"targetname"	"trigger_fade_music"
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"0 0 20"
+			"angles"	"0 90 0"
+			"followid"	"c1a3b-c1a3c-elevator"
+		}
+		"bunkerairstrike"
+		{
+			"origin"	"-1943 832 -1712"
+			"angles"	"0 180 0"
+			"triggerid" "c1a3c_small_bunker_airstrike"
+			"output"	"OnTrigger"
+			"portal"	"-1922 972 -1319"
+			"delay"		"0.5"
+			"bringall"	"1"
+		}
+	}
+}

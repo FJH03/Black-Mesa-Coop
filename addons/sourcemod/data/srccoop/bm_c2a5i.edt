@@ -1,0 +1,186 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Surface Tension"
+	"nextmap" "bm_c3a1a"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(c2a5i_equipment_weapons|c2a5i_equipment_ammo|c2a5i_equipment_misc)$/"
+		}
+	}
+	"entity"
+	{
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "234 8120 -232"
+					"size" "12 56 112"
+				}
+			}
+		}
+		// merge these triggers for edge case
+		"delete"
+		{
+			"targetname"	"trigger_slamdoor"
+		}
+		"modify"
+		{
+			"targetname"	"trigger_scene_gargtrap"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnTrigger"
+					"target"	"i_garg_slamdoor"
+					"input"		"Close"
+				}
+			}
+		}
+		// dont stop chasing until reached the end
+		"modify"
+		{
+			"hammerid" "/^((?!962790).)*$/" // everything except the chase end trigger
+			"outputs"
+			{
+				"remove"
+				{
+					"input" "chaseend"
+				}
+			}
+		}
+		// blocker
+		"delete"
+		{
+			"targetname" "player_block_garga"
+		}
+		// triggers on top of the tower
+		"modify"
+		{
+			"hammerid" "/^(1457972|1239127|1717569)$/"
+			"outputs"
+			{
+				"modify"
+				{
+					"output" "OnEndTouch"
+					"replace"
+					{
+						"output" "OnEndTouchAll"
+					}
+				}
+				"modify"
+				{
+					"output" "OnStartTouch"
+					"replace"
+					{
+						"output" "OnStartTouchAll"
+					}
+				}
+			}
+		}
+		// start with satellite tower broken since the mortar launcher doesn't work
+		"add"
+		{
+			"classname" "logic_auto"
+			"spawnflags" "1"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnMapSpawn"
+					"target" "c2a5h_cinephys_break"
+					"input" "break"
+				}
+			}
+		}
+		// this wheel button can get easily stuck in start position on linux, we can apply a workaround with following output
+		// TODO move to baseclass if this happens elsewhere?
+		"modify"
+		{
+			"targetname" "c2a5g_exit_wheel"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnFullyOpen"
+					"target" "!self"
+					"input" "SetPositionImmediately"
+					"parameter" "0.0001"
+					"timestofire" "-1"
+				}
+			}
+		}
+		// setup changelevel timer
+		"modify"
+		{
+			"targetname"	"c2a5i_changelevel"
+			"set"
+			{
+				"spawnflags" "0" // enable touch
+				"StartDisabled" "1" // initially disabled
+			}
+		}
+		"modify"
+		{
+			"targetname"	"c3a1a_entrydoor"
+			"outputs"
+			{
+				"modify"
+				{
+					"input" "ChangeLevel"
+					"target" "c2a5i_changelevel"
+					"replace"
+					{
+						"input" "Enable"
+					}
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-6144 -128 -220"
+			"angles"	"0 270 0"
+		}
+		"arena1"
+		{
+			"origin"	"-4145 -1832 -32"
+			"angles"	"0 0 0"
+			"triggerid"	"trigger_scene_radio_ifak"
+			"output"	"OnTrigger"
+		}
+		"rubbledoor"
+		{
+			"origin"	"-2232 80 1"
+			"angles"	"0 0 0"
+			"triggerid"	"i_garg_slamdoor"
+			"output"	"OnFullyClosed"
+			"portal"	"-2544 0 40"
+		}
+		"bigrubblecollapse"
+		{
+			"origin"	"-896 3944 -135"
+			"angles"	"0 90 0"
+			"triggerid"	"collapse_relay"
+			"output"	"OnTrigger"
+			"portal"	"-1136 3224 -80"
+		}
+		"finaltunnel"
+		{
+			"origin"	"-1024 6936 -100"
+			"angles"	"0 90 0"
+			"triggerid" "c2a5g_exit_wheel"
+			"output"	"OnPressed"
+		}
+	}
+}

@@ -1,0 +1,146 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Anomalous Materials"
+	"nextmap"		"bm_c1a0b"
+	"intro_type"	"none"
+	"equipment"
+	{
+	}
+	"entity"
+	{
+		// make all npcs invulnerable
+		"modify"
+		{
+			"classname" "/^npc_/"
+			"set"
+			{
+				"damagefilter" "__srccoop_damage_filter"
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"targetname" "trigger_intro_scene"
+			"functions"
+			{
+				"delay_output" "OnTrigger"
+			}
+		}
+		// HEV checkpoint.
+		"add"
+		{
+			"classname"		"logic_relay"
+			"targetname"	"HEV_checkpoint"
+		}
+		// suit pickup - fire outputs only once
+		"modify"
+		{
+			"classname" "item_suit"
+			"targetname" "HEV"
+			"outputs"
+			{
+				"modify"
+				{
+					"output" "OnPlayerPickup"
+					"replace"
+					{
+						"timestofire" "1"
+					}
+				}
+				"add"
+				{
+					"output" "OnPlayerPickup"
+					"target" "HEV_checkpoint"
+					"input" "Trigger"
+					"delay" "0"
+					"timestofire" "1"
+				}
+			}
+		}
+		// remove end lift blocker brush
+		"delete"
+		{
+			"targetname"	"lift_block"
+		}
+		// prepare changelevel touch trigger
+		"modify"
+		{
+			"targetname" "bm_c1a0a_bm_c1a0b"
+			"classname" "trigger_changelevel"
+			"set"
+			{
+				"StartDisabled" "1"
+				"spawnflags" "0"
+			}
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_transition"
+					"targetname" "bm_c1a0a_bm_c1a0b_lm"
+				}
+			}
+		}
+		"modify"
+		{
+			"outputs"
+			{
+				"modify"
+				{
+					"target" "bm_c1a0a_bm_c1a0b"
+					"input" "ChangeLevel"
+					"replace"
+					{
+						"input" "Enable"
+					}
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"0 0 -40"
+			"angles"	"0 90 0"
+			"followid"	"train_model"
+		}
+		"door1"
+		{
+			"origin"	"272 28 520"
+			"angles"	"0.0 90.0 0.0"
+			"delay"		"0.35"
+			"triggerid"	"LCS_AM_Airlock_trigger"
+			"output"	"OnTrigger"
+			"bringall"	"1"
+		}
+		"door2"
+		{
+			"origin"	"272 416 520"
+			"angles"	"7.5 80.0 0.0"
+			"delay"		"0.35"
+			"triggerid"	"door_02_btm"
+			"output"	"OnClose"
+			"bringall"	"1"
+		}
+		"hev_pickup"
+		{
+			"origin"	"925 4450 415"
+			"angles"	"12.5 -90.0 0.0"
+			"triggerid"	"HEV_checkpoint"
+			"output"	"OnTrigger"
+			"bringall"	"1"
+		}
+		"elevatorroom"
+		{
+			"origin"	"-1325 2750 335"
+			"angles"	"7.5 270.0 0.0"
+			"triggerid"	"lab1_door1a"
+			"output"	"OnClose"
+			"delay"		"1.00"
+			"portal"	"-1328 2908 357"
+		}
+	}
+}

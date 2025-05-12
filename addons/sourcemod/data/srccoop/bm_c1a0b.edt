@@ -1,0 +1,221 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Anomalous Materials"
+	"nextmap"		"bm_c1a1a"
+	"intro_type"	"none"
+	
+	"features"
+	{
+		"TRANSFER_PLAYER_STATE" "0"
+	}
+	"equipment"
+	{
+		"item" "item_suit"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname"	"suit"
+		}
+		// make all npcs invulnerable
+		"modify"
+		{
+			"classname" "/^npc_/"
+			"set"
+			{
+				"damagefilter" "__srccoop_damage_filter"
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"hammerid" "1864584"
+			// remove keyboard animation
+			"outputs"
+			{
+				"remove"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"SCI32_Generator_ss1"
+					"input"		"BeginSequence"
+				}
+			}
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// play keyboard animation immediately
+		"add"
+		{
+			"classname"		"logic_auto"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"SCI32_Generator_ss1"
+					"input"		"BeginSequence"
+				}
+			}
+		}
+		// remove trigger which calls spawn elevator up and closes doors
+		"delete"
+		{
+			"classname" "trigger_once"
+			"hammerid" "1687854"
+		}
+		// remove npc killers
+		"modify"
+		{
+			"targetname" "trigger_delete_old"
+			"outputs"
+			{
+				"remove" {}
+			}
+		}
+		"modify"
+		{
+			"targetname" "chamber_airlockbot"
+			"outputs"
+			{
+				"remove"
+				{
+					"input" "Kill"
+				}
+			}
+		}
+		"modify"
+		{
+			"hammerid" "1784711"
+			"outputs"
+			{
+				"remove"
+				{
+					"input" "Kill"
+				}
+			}
+		}
+		"delete"
+		{
+			"targetname" "relay_foyeridles_kill"
+		}
+		// force shut the airlock doors instead of using the blocker
+		"delete"
+		{
+			"targetname" "door_block"
+		}
+		"modify"
+		{
+			"targetname" "/^(chamber_airlocktop|chamber_airlockbot)$/"
+			"set"
+			{
+				"dmg" "50"
+			}
+		}
+		// move teleport a bit back so players dont see themselves
+		"modify"
+		{
+			"targetname" "disaster_pointteleport2"
+			"set"
+			{
+				"origin" "-9216 -3184 -888"
+			}
+		}
+		// cart push timeout - restart map
+		"modify"
+		{
+			"targetname" "disaster_timeout"
+			"outputs"
+			{
+				"remove"
+				{
+					"output" "OnTrigger"
+					"target" "console_cl"
+					"parameter" "kill"
+				}
+				// lets ignite 'em instead ;)
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "player"
+					"input" "Ignite"
+				}
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "_coop_speedmod_disaster_timeout"
+					"input" "ModifySpeedAll"
+					"parameter" "0.0"
+				}
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "__srccoop_servercommand"
+					"input" "Command"
+					"parameter" "changelevel bm_c1a0b"
+					"delay" "12"
+				}
+			}
+		}
+		"create"
+		{
+			"classname" "point_servercommand"
+			"targetname" "__srccoop_servercommand"
+		}
+		"create"
+		{
+			"classname" "player_speedmod"
+			"targetname" "_coop_speedmod_disaster_timeout"
+			"spawnflags" "255" // disables hud and keys
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-1328 1921 -212"
+			"angles"	"0 270 0"
+		}
+		"watchroom"
+		{
+			"origin"	"-3360 1344 -407"
+			"angles"	"0 180 0"
+			"triggerid"	"lab2_door4"
+			"output"	"OnClose"
+			"delay"		"1.0"
+			"portal"	"-3278 1340 -379"
+		}
+		"watchroom_after"
+		{
+			"origin"	"-3820 1340 -407"
+			"angles"	"0 180 0"
+			"triggerid"	"lab2_door5"
+			"output"	"OnClose"
+			"delay"		"1.0"
+			"portal"	"-3760 1340 -379"
+		}
+		"chamber1"
+		{
+			"origin"	"-4280 773 -631"
+			"angles"	"5.0 -55 0"
+			"triggerid"	"td_2"
+			"output"	"OnClose"
+			"bringall"	"1"
+		}
+		"chamber2"
+		{
+			"origin"	"-4028 604 -631"
+			"angles"	"-2.5 -7.5 0"
+			"triggerid"	"chamber_airlockbot"
+			"output"	"OnFullyClosed"
+			"delay"		"0.5"
+			"bringall"	"1"
+		}
+	}
+}

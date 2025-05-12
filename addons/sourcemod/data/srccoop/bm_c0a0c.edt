@@ -1,0 +1,36 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Black Mesa Inbound"
+	"nextmap" "bm_c1a0a"
+	"intro_type" "none"
+	
+	"voting_skip_to" "bm_c1a0a"
+	
+	"equipment"
+	{
+	}
+	"entity"
+	{
+		// delay map start
+		"modify"
+		{
+			"classname"	"logic_auto"
+			"hammerid" "176812"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"0 0 -40"
+			"angles"	"0 270 0"
+			"followid"	"train_model"
+		}
+	}
+}

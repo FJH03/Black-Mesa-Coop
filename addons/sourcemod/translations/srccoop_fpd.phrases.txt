@@ -1,0 +1,42 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"death cam setting updated"
+	{
+		"en"			"Death camera setting updated."
+		"ru"			"Обновлены настройки камеры смерти"
+	}
+
+	/* Menu */
+	
+	"death cam"
+	{
+		"en"			"Death cam"
+		"ru"			"Камера смерти"
+	}
+
+	"default"
+	{
+		"en"			"Default"
+		"ru"			"По-умолчанию"
+	}
+
+	"third-person"
+	{
+		"en"			"Third-person"
+		"ru"			"От третьего лица"
+	}
+
+	"first-person"
+	{
+		"en"			"First-person"
+		"ru"			"От первого лица"
+	}
+
+}

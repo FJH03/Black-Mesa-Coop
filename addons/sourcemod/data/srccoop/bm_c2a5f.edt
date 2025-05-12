@@ -1,0 +1,125 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Surface Tension"
+	"nextmap" "bm_c2a5g"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(c2a5f_equipment_weapons|c2a5f_equipment_ammo|c2a5f_equipment_misc)$/"
+		}
+	}
+	// TODO: look into playerhashivehand globalstate
+	"entity"
+	{
+		// block prev changelevel
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c2a5e"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10" // dont render
+			}
+		}
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-516 -5186 488"
+					"size" "8 516 272"
+				}
+			}
+		}
+		// Make guard from last map invul, 
+		// move him behind a cutscene trigger
+		// make auto follow player
+		// also remove the npc_maker for him
+		"delete"
+		{
+			"targetname" "maker_grd_jackson"
+		}
+		"modify"
+		{
+			"targetname"	"GRD02_HiveHand"
+			"set"
+			{
+				"origin" "-2816 -1792 -256"
+				"damagefilter" "__srccoop_damage_filter"
+				// remove template npc, gag, and nogreet flags
+				"spawnflags" "516"
+			}
+		}
+		"create"
+		{
+			"classname" "ai_goal_follow"
+			"targetname" "GRD02_HiveHand_follow"
+			"actor" "GRD02_HiveHand"
+			"MaximumState" "1"
+		}
+		"modify"
+		{
+			"hammerid" "3736906"
+			"outputs"
+			{
+				"add"
+				{
+					"target" "GRD02_HiveHand_follow"
+					"output" "OnTrigger"
+					"input" "Activate"
+				}
+			}
+		}
+		// unlock armoury door if guard dies
+		"modify"
+		{
+			"targetname" "c2a5f_barney"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnDeath"
+					"target" "c2a5f_armoury_door_12b"
+					"input" "Unlock"
+				}
+				"add"
+				{
+					"output" "OnDeath"
+					"target" "c2a5f_armoury_door_12a"
+					"input" "Unlock"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-2368 -1664 -220"
+			"angles"	"0 65 0"
+		}
+		"armory"
+		{
+			"origin"	"-480 -1468 420"
+			"angles"	"0 0 0"
+			"triggerid"	"3353372"
+			"output"	"OnTrigger"
+		}
+		"arena2"
+		{
+			"origin"	"1024 -2526 250"
+			"angles"	"0 270 0"
+			"triggerid"	"block_door"
+			"output"	"OnFullyClosed"
+			"portal"	"1024 -2392 250"
+		}
+	}
+}

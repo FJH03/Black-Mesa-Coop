@@ -1,0 +1,100 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Nihilanth"
+	"nextmap" "bm_c5a1a"
+	"features"
+	{
+		"TRANSFER_PLAYER_STATE" "0"
+	}
+	"define"
+	{
+		"outputs_fixup_player_in_parameter" "0"
+	}
+	"console"
+	{
+		// fixes *some* server configurations crashing during Nihilanth precache on level start
+		"mod_forcetouchdata" "0"
+	}
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "gonarch_equipment"
+		}
+		"lookup"
+		{
+			"targetname" "gonarch_equipment_crowbar"
+		}
+	}
+	"entity"
+	{
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// modify all cyclone misc_marionettist to target !activator
+		"modify"
+		{
+			"classname" "logic_relay"
+			"outputs"
+			{
+				"modify"
+				{
+					"output" "OnTrigger"
+					"target" "/^cyclone_marionettist_/"
+					"input" "Manipulate"
+					"parameter" "!player"
+					"replace"
+					{
+						"parameter" "!activator"
+					}
+				}
+			}
+		}
+		// fix cyclone hurt
+		"modify"
+		{
+			"targetname" "cyclone_hurt"
+			"set"
+			{
+				"DamageTarget" "!activator"
+			}
+		}
+		"modify"
+		{
+			"classname" "logic_relay"
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "cyclone_hurt"
+					"input" "TurnOff"
+				}
+				"modify"
+				{
+					"target" "cyclone_hurt"
+					"input" "TurnOn"
+					"replace"
+					{
+						"input" "Hurt"
+					}
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"34 1869 -659"
+			"angles"	"0 270 0"
+		}
+	}
+}

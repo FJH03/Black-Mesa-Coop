@@ -1,0 +1,211 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "\"We Got Hostiles!\""
+	"nextmap" "bm_c1a3b"
+	"nextmap" "bm_c1a4a"
+	"intro_type" "none"
+
+	"equipment"
+	{
+		"item"	"item_suit"
+		"item"	"item_weapon_crowbar"
+		"item"	"item_weapon_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_weapon_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_weapon_frag"
+		"item"	"item_weapon_frag"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname" "/^(suit|weapons|ammo)$/"
+		}
+		// delay map start
+		"modify"
+		{
+			"targetname" "transition_dooropen"
+			"functions"
+			{
+				"delay_output" "OnTrigger"
+			}
+		}
+		// delete elevator door close trigger
+		"delete"
+		{
+			"hammerid" "51187"
+		}
+		// dont kill npcs
+		"modify"
+		{
+			"targetname" "bm_c1a3a_headcrab_killer"
+			"outputs"
+			{
+				"remove" {}
+			}
+		}
+		// stop the elevator at changelevel
+		"modify"
+		{
+			"classname" "path_track"
+			"targetname" "p2"
+			"set"
+			{
+				"origin" "1130 -2400 230"
+			}
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnPass"
+					"target" "eb"
+					"input" "kill"
+				}
+			}
+		}
+
+		// ********************
+		// Part 2
+		// ********************
+		
+		// turn backtracking changelevel trigger into invisible wall
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a3c"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10" // dont render
+			}
+		}
+		// block going past changelevel area
+		"modify"
+		{
+			"targetname" "/^c1a4a_plank/"
+			"set"
+			{
+				"minhealthdmg" "999999"
+			}
+		}
+		// block going past changelevel area
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"hammerid" "452166"
+				}
+			}
+		}
+		#if
+		{
+			"globalstate" "c1a3c_c1a3a"
+			#then
+			{
+				// delete sentry in the room with the marines
+				"remove"
+				{
+					"classname"		"npc_sentry_ground"
+					"targetname"	"sentry_01"
+				}
+				// remove vent in scientist room
+				"remove"
+				{
+					"targetname"	"OpenSiloDoors_vent"
+				}
+				// remove the coffee cup that the zombie destroys
+				"remove"
+				{
+					"targetname"	"rustyreallyhatesthiscup"
+				}
+				// delete relay on map start, which the map deletes on player spawn, which is too late for us
+				"remove"
+				{
+					"targetname" "transition_dooropen"
+				}
+				// delete trigger outside the elevator from first part
+				"remove"
+				{
+					"targetname" "OpenSiloDoors_trig"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		#if
+		{
+			"!globalstate" "c1a3c_c1a3a"
+			#then
+			{
+				"spawn"
+				{
+					"origin"	"-519 990 -119"
+					"angles"	"0 0 0"
+				}
+				"gotlunch"
+				{
+					"origin"	"-1582 -1286 -119"
+					"angles"	"21 80 0"
+					"triggerid" "bm_c1a3a_headcrab_killer"
+					"output"	"OnTrigger"
+				}
+				"militarycontrol"
+				{
+					"origin"	"256 -1247 -312"
+					"angles"	"0 0 0"
+					"triggerid" "sscape_storagearea3"
+					"output"	"OnPlay"
+				}
+				"RescuedAtLast"
+				{
+					"origin"	"1250 -1543 -12"
+					"angles"	"0 270 0"
+					"triggerid" "RescuedAtLast_trig03"
+					"output"	"OnTrigger"
+				}
+				"endlift"
+				{
+					"origin"	"0 0 20"
+					"angles"	"0 0 0"
+					"followid"	"AToBElev"
+					"portal"	"1130 -2209 -283"
+					"triggerid" "eb"
+					"output"	"OnPressed"
+					"delay"		"3"
+				}
+			}
+			#else
+			{
+				"spawn2"
+				{
+					"origin"	"-2984 -877 32"
+					"angles"	"0 90 0"
+				}
+				"controlroom"
+				{
+					"origin"	"-533 608 -119"
+					"angles"	"0 0 0"
+					"triggerid"	"sec_door_02"
+					"output"	"OnFullyClosed"
+					"portal"	"-608 608 -91"
+				}
+			}
+		}
+	}
+}

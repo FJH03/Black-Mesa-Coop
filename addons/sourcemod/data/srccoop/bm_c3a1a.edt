@@ -1,0 +1,70 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "\"Forget About Freeman!\""
+	"nextmap" "bm_c3a1b"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "c3a1a_equipment"
+		}
+	}
+	"entity"
+	{
+		// block previous changelevel
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map"	"bm_c2a5i"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10" // dont render
+			}
+		}
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "1296 -1716 -424"
+					"size" "64 64 32"
+				}
+			}
+		}
+		// dont do the hatch closing and barney killing
+		"delete"
+		{
+			"targetname" "grd01_closeshatch"
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"4975 499 -497"
+			"angles"	"0 300 0"
+		}
+		"ceilingcollapse"
+		{
+			"origin"	"5520 -1075 -407"
+			"angles"	"0 -90 0"
+			"triggerid" "1361215"
+			"output"	"OnTrigger"
+			"portal"	"5377 -415 -440"
+		}
+		"goingdownthehole"
+		{
+			"origin"	"2656 -776 -551"
+			"angles"	"0 270 0"
+			"triggerid" "hatch_door"
+			"output"	"OnFullyOpen"
+		}
+	}
+}
