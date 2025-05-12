@@ -1,0 +1,129 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Interloper"
+	"nextmap" "bm_c4a3d1"
+	"features"
+	{
+		"FIRSTPERSON_DEATHCAM" "0"
+	}
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "interloper_equipment"
+		}
+	}
+	"entity"
+	{
+		// first suckyvents fix
+		"modify"
+		{
+			"targetname" "base_barrel_triggers"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "first_vent"
+					"input"	"Kill"
+				}
+			}
+		}
+		// trigger_playermovement force crouch (puts player in bugged state after landing in mp)
+		"delete"
+		{
+			"hammerid" "278608"
+		}
+		// make flower doors always open
+		"delete"
+		{
+			"hammerid" "285083"
+		}
+		// First Xontroller throwing barrel at player in glass tube:
+		// keep respawning the barrel in case first try doesn't hit (player not in position)
+		"modify"
+		{
+			"classname" "trigger_once"
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "relay_barrel2"
+					"input" "Disable"
+				}
+			}
+		}
+		// decrease suckyvent radius to prevent issues like getting stuck / dying
+		"modify"
+		{
+			"targetname" "base_mar1"
+			"set"
+			{
+				"innerdestinationradius" "10"
+				"outerdestinationradius" "10"
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-7753 -15059 -10753"
+			"angles"	"0 180 0"
+		}
+		"base crystal controller fight"
+		{
+			"origin"	"-9687 -11662 -11482"
+			"angles"	"0 -112 0"
+			"triggerid"	"base_barrel_triggers"
+			"output"	"OnTrigger"
+		}
+		"after base crystal controller fight"
+		{
+			"origin"	"-9799 -12224 -11298"
+			"angles"	"0 0 0"
+			"triggerid"	"first_song_trig"
+			"output"	"OnStartTouch"
+			"bringall"	"1"
+		}
+		"middle crystal controller fight"
+		{
+			"origin"	"-10317 -12222 -3289"
+			"angles"	"0 0 0"
+			"triggerid"	"284463"
+			"output"	"OnTrigger"
+		}
+		"after middle crystal controller fight"
+		{
+			"origin"	"-9799 -12224 -2466"
+			"angles"	"0 0 0"
+			"triggerid"	"288736"
+			"output"	"OnStartTouch"
+			"bringall"	"1"
+		}
+		"final crystal controller fight"
+		{
+			"origin"	"-10317 -12222 1989"
+			"angles"	"0 0 0"
+			"triggerid"	"280999"
+			"output"	"OnTrigger"
+		}
+		"after final crystal controller fight"
+		{
+			"origin"	"-9799 -12224 3070"
+			"angles"	"0 0 0"
+			"triggerid"	"288895"
+			"output"	"OnStartTouch"
+			"bringall"	"1"
+		}
+		"elevator goes back"
+		{
+			"origin"	"-9799 -12224 4162"
+			"angles"	"0 0 0"
+			"triggerid"	"final_pull_down_elevator_invisible"
+			"output"	"OnFullyOpen"
+		}
+	}
+}

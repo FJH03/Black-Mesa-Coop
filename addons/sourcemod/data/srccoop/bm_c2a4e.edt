@@ -1,0 +1,92 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Questionable Ethics"
+	"nextmap" "bm_c2a4f"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(suit|weapons)$/"
+		}
+	}
+	"entity"
+	{
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-1984 -1304 560"
+					"size" "272 16 256"
+				}
+			}
+		}
+		// Allow tests to kill players too
+		"modify"
+		{
+			"classname"	"trigger_physics_trap"
+			"flags"
+			{
+				"spawnflags"
+				{
+					"add"	"1"
+				}
+			}
+		}
+
+		// set up guard persistance
+		"add"
+		{
+			"classname" "env_global"
+			"targetname" "grd01_following_global"
+			"globalstate" "grd01_following"
+		}
+		"modify"
+		{
+			"targetname" "GRD01_Office"
+			"outputs"
+			{
+				"add"
+				{
+					"target" "grd01_following_global"
+					"output" "OnDeath"
+					"input"	"TurnOff"
+				}
+				"add"
+				{
+					"target" "grd01_following_global"
+					"output" "OnPlayerUse"
+					"input"	"TurnOn"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"4488 -32 -410"
+			"angles"	"0 180 0"
+		}
+		"doggies"
+		{
+			"origin"	"3608 496 236"
+			"angles"	"0 180 0"
+			"triggerid"	"fnc_brk"
+			"output"	"OnBreak"
+		}
+		"cafe"
+		{
+			"origin"	"0 0 435"
+			"angles"	"0 -90 0"
+			"triggerid"	"Scene_grd01_pre"
+			"output"	"OnStart"
+		}
+	}
+}

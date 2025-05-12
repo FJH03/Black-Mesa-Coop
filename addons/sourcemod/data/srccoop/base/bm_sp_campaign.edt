@@ -1,0 +1,14 @@
+// This file is inherited by each BM campaign map config
+
+#base "coop_base_sp_conversion.edt"
+
+"config"
+{
+	"campaign" "Black Mesa Official"
+	"console"
+	{
+	}
+	"entity_base_bm_sp_campaign"
+	{
+	}
+}

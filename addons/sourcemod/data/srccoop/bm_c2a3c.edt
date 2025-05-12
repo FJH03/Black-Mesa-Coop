@@ -1,0 +1,85 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Apprehension"
+	"nextmap" "bm_c2a4a"
+	"features"
+	{
+		"TRANSFER_PLAYER_STATE" "0"
+	}
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(player_spawn_weapon|player_spawn_ammo|player_spawn_suit|player_spawn_battery)$/"
+		}
+	}
+	"entity"
+	{
+		// Change level instead of activating the teleport
+		"modify"
+		{
+			"targetname" "scene_AMBUSH02"
+			"outputs"
+			{
+				"modify"
+				{
+					"output" "OnCompletion"
+					"target" "gordon_teleport_byebye"
+					"replace"
+					{
+						"target" "c2a4a_transition"
+						"input" "Changelevel"
+					}
+				}
+			}
+		}
+		// Move the players to the second scene location so we can hear the dialog
+		"add"
+		{
+			"classname" "point_teleport"
+			"targetname" "_srccoop_finalscene_tp"
+			"origin" "-5952 -1024 417"
+			"target" "!player"
+		}
+		"modify"
+		{
+			"targetname" "relay_sceneteleport"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "_srccoop_finalscene_tp"
+					"input" "Teleport"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin" "800 128 70"
+			"angles" "0 180 0"
+		}
+		"elevator"
+		{
+			"origin" "0 0 60"
+			"angles" "0 180 0"
+			"followid" "elevator"
+			"portal" "-704 -1568 -160"
+			"triggerid" "elevator"
+			"output" "OnStart"
+		}
+		"ambush"
+		{
+			"triggerid" "trigger_ambush_scene"
+			"origin" "-4324 -56 465"
+			"angles" "0 180 0"
+			"output" "OnTrigger"
+			"bringall" "1"
+		}
+	}
+}

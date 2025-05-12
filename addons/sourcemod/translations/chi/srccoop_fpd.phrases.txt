@@ -1,0 +1,37 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"death cam setting updated"
+	{
+		"chi"			"死亡摄影机设定已更新。"
+	}
+
+	/* Menu */
+	
+	"death cam"
+	{
+		"chi"			"死亡摄影机"
+	}
+
+	"default"
+	{
+		"chi"			"预设"
+	}
+
+	"third-person"
+	{
+		"chi"			"第三人称"
+	}
+
+	"first-person"
+	{
+		"chi"			"第一人称"
+	}
+
+}

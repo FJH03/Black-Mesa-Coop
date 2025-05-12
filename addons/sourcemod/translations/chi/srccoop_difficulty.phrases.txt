@@ -1,0 +1,27 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"difficulty changed"
+	{
+		"#format"		"{1:d}" // new difficulty
+		"chi"			"难度已变更为 {ter}{1}"
+	}
+
+	"current difficulty"
+	{
+		"#format"		"{1:d}" // difficulty
+		"chi"			"目前难度: {ter}{1}"
+	}
+
+	"unable to set"
+	{
+		"chi"			"无法设定难度: sourcecoop_difficulty_auto_max 低于 sourcecoop_difficulty_auto_min"
+	}
+	
+}

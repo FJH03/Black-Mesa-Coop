@@ -1,0 +1,106 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Surface Tension"
+	"nextmap" "bm_c2a5c"
+	"equipment"
+	{
+		"item" "item_weapon_tau"
+		"item" "item_weapon_shotgun"
+		"item" "item_weapon_mp5"
+		"item" "item_weapon_glock"
+		"item" "item_weapon_frag"
+		"item" "item_weapon_frag"
+		"item" "item_weapon_frag"
+		"item" "item_weapon_frag"
+		"item" "item_weapon_crowbar"
+		"item" "item_weapon_crossbow"
+		"item" "item_weapon_357"
+		"item" "item_suit"
+		"item" "item_grenade_mp5"
+		"item" "item_grenade_mp5"
+		"item" "item_battery"
+		"item" "item_battery"
+		"item" "item_battery"
+		"item" "item_ammo_shotgun"
+		"item" "item_ammo_shotgun"
+		"item" "item_ammo_mp5"
+		"item" "item_ammo_mp5"
+		"item" "item_ammo_mp5"
+		"item" "item_ammo_mp5"
+		"item" "item_ammo_energy"
+		"item" "item_ammo_357"
+	}
+	"entity"
+	{
+		// block return
+		"modify"
+		{
+			"targetname"	"trigger_cc_switch01"
+			"set"
+			{
+				"classname"		"func_brush"
+				"rendermode"	"10"
+			}
+		}
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-3940 5200 176"
+					"size" "72 16 72"
+				}
+			}
+		}
+		// Create a cp trigger
+		"create"
+		{
+			"classname"		"trigger_once"
+			"targetname"	"mineshaft_cp_trig"
+			"spawnflags"	"1"
+			"functions"
+			{
+				"copy_model"
+				{
+					"targetname"	"trigger_cc_mineshaft"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"64 -1448 32"
+			"angles"	"0 90 0"
+		}
+		"mineshaft"
+		{
+			"origin"	"-3798 -286 535"
+			"angles"	"0 180 0"
+			"triggerid"	"mineshaft_cp_trig"
+			"output"	"OnTrigger"
+		}
+		"assault"
+		{
+			"origin"	"-2800 1736 450"
+			"angles"	"0 0 0"
+			"triggerid"	"c2a5b_assault_trigger_03"
+			"output"	"OnTrigger"
+		}
+		"minefield"
+		{
+			"origin"	"-2141 2450 635"
+			"angles"	"0 180 0"
+			"triggerid"	"trigger_cavevalleydoor_close"
+			"output"	"OnTrigger"
+			"portal"	"-2032 2456 640"
+		}
+	}
+}

@@ -1,0 +1,36 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"unavailable"
+	{
+		"chi"			"解除卡点功能目前无法使用。"
+	}
+
+	"cooldown"
+	{
+		"#format"		"{1:1.0f}"
+		"chi"			"您无法解除卡点，请再等待 {ter}{1}{pri} 秒！"
+	}
+
+	"falling"
+	{
+		"chi"			"在坠落时无法解除卡点。"
+	}
+
+	"success"
+	{
+		"chi"			"已移动到目前检查点。"
+	}
+
+	"failure"
+	{
+		"chi"			"无法找到适合的位置来放置您。"
+	}
+
+}

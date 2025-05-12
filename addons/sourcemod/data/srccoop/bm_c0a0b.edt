@@ -1,0 +1,78 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Black Mesa Inbound"
+	"nextmap" "bm_c0a0c"
+	"intro_type" "none"
+	
+	"voting_skip_to" "bm_c1a0a"
+	
+	"equipment"
+	{
+	}
+	"entity"
+	{
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"hammerid" "428711"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		"modify"
+		{
+			"classname" "logic_auto"
+			"hammerid" "1292125"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		"modify"
+		{
+			"targetname" "tram_track_52"
+			"set"
+			{
+				"speed" "0"
+			}
+		}
+		// fix tram-stuck when there are no players for trigger
+		"modify"
+		{
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "sec_lock_scene"
+					"input" "Start"
+				}
+			}
+		}
+		"modify"
+		{
+			"targetname" "tram_track_139"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnPass"
+					"target" "sec_lock_scene"
+					"input" "Start"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"0 0 -40"
+			"angles"	"0 270 0"
+			"followid"	"train_model"
+		}
+	}
+}

@@ -1,0 +1,120 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Residue Processing"
+	"nextmap" "bm_c2a4b"
+	"equipment"
+	{
+		"health" "45"
+		"lookup"
+		{
+			"targetname" "suit"
+		}
+	}
+	"features"
+	{
+		// spawn with crowbar once it's picked up
+		"KEEP_EQUIPMENT" "1"
+	}
+	"entity"
+	{
+		// delay map start
+		"modify"
+		{
+			"classname"	"logic_auto"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// dont kill ents
+		"delete"
+		{
+			"targetname" "crusher_kill_relay"
+		}
+		// use changelevel touch trigger
+		"modify"
+		{
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "bm_c2a4a_trigger"
+					"input" "ChangeLevel"
+				}
+			}
+		}
+		// block off next map area
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-1896 2104 -320"
+					"size" "64 16 191"
+				}
+			}
+		}
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-1896 1832 -320"
+					"size" "64 16 191"
+				}
+			}
+		}
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "-1940 1968 -320"
+					"size" "24 288 191"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-3114 155 816"
+			"angles"	"0 0 0"
+		}
+		"spawn_top"
+		{
+			"origin"	"-2715 190 1049"
+			"angles"	"0 180 0"
+			"triggerid"	"north_compactor_trigger"
+			"output"	"OnTrigger"
+			"delay"		"25"
+		}
+		"crusherclosed"
+		{
+			"origin"	"-2162 -511 -184"
+			"angles"	"0 300 0"
+			"triggerid"	"west_trash_door"
+			"output"	"OnClose"
+			"portal"	"-3011 192 817"
+		}
+		"facility"
+		{
+			"origin"	"-823 864 -60"
+			"angles"	"0 45 0"
+			"triggerid"	"trigger_portal_interrupt"
+			"output"	"OnTrigger"
+		}
+	}
+}

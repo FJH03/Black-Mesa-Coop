@@ -1,0 +1,79 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Blast Pit"
+	"nextmap" "bm_c1a4b"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "c1a4d_equipment"
+		}
+	}
+	"entity"
+	{
+		// backtracking blocker
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"targetname" "_coop_return_blocker"
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_changelevel"
+					"map" "bm_c1a4b"
+				}
+			}
+		}
+		// changelevel - start disabled
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a4b"
+			"set"
+			{
+				"StartDisabled" "1"
+			}
+		}
+		// allow return to previous map when we done here
+		"modify"
+		{
+			"targetname" "c1a4f_reactor_power_mathcounter"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnHitMax"
+					"target" "trigger_changelevel"
+					"input" "enable"
+				}
+				"add"
+				{
+					"output" "OnHitMax"
+					"target" "_coop_return_blocker"
+					"input" "kill"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-180 2888 1161"
+			"angles"	"0 0 0"
+		}
+		"generator"
+		{
+			"origin"	"831 3966 -632"
+			"angles"	"0 225 0"
+			"triggerid" "c1a4f_reactor_power_mathcounter"
+			"output"	"OnHitMax"
+			"bringall"	"1"
+			"bringall_radius" "820"
+		}
+	}
+}

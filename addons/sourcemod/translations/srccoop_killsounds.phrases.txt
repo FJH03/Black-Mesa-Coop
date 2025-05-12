@@ -1,0 +1,40 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"killsounds disabled"
+	{
+		"en"			"Kill confirm sounds disabled."
+		"ru"			"Звуки подтверждения убийства выключены."
+		"zho"			"擊殺確認音效已關閉。"
+	}
+
+	"killsounds enabled"
+	{
+		"en"			"Kill confirm sounds enabled."
+		"ru"			"Звуки подтверждения убийства включены."
+		"zho"			"擊殺確認音效已開啟。"
+	}
+
+	/* Menu */
+	
+	"disable killsounds"
+	{
+		"en"			"Disable killsounds"
+		"ru"			"Выключить звуки убийств"
+		"zho"			"關閉擊殺音效"
+	}
+
+	"enable killsounds"
+	{
+		"en"			"Enable killsounds"
+		"ru"			"Включить звуки убийств"
+		"zho"			"開啟擊殺音效"
+	}
+
+}

@@ -1,0 +1,40 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"thirdperson blocked"
+	{
+		"en"			"Thirdperson mode is currently disabled."
+		"ru"			"Режим от третьего лица отключен."
+		"zho"			"第三人稱模式目前已關閉。"
+	}
+
+	"thirdperson enter"
+	{
+		"en"			"You are now in thirdperson mode."
+		"ru"			"Вы в режиме от третьего лица."
+		"zho"			"你現在處於第三人稱模式。"
+	}
+
+	"thirdperson exit"
+	{
+		"en"			"You are no longer in thirdperson mode."
+		"ru"			"Вы теперь не от третьего лица."
+		"zho"			"你不再處於第三人稱模式。"
+	}
+
+	/* Menu */
+
+	"toggle thirdperson"
+	{
+		"en"			"Toggle thirdperson"
+		"ru"			"Переключить режим третьего лица."
+		"zho"			"切換第三人稱模式"
+	}
+
+}

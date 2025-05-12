@@ -1,0 +1,108 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Unforeseen Consequences"
+	"nextmap"		"bm_c1a1b"
+	"intro_type"	"fade"
+	
+	"equipment"
+	{
+		"health" "70"
+		"item" "item_suit"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname"	"global_newgame_spawner_suit"
+		}
+		"modify"
+		{
+			"classname" "logic_auto"
+			"hammerid"	"794799"
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "!player"
+					"input" "SetHealth"
+				}
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname"	"logic_auto"
+			"hammerid" "794799"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		"remove"
+		{
+			"targetname"	"relay_stop_cpr_scene"
+		}
+		// prepare changelevel touch trigger
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a1b"
+			"functions"
+			{
+				"copy_model"
+				{
+					"targetname" "cc_trig_ab_base"
+				}
+			}
+		}
+		"modify"
+		{
+			"targetname" "lift_endblocker"
+			"remove"
+			{
+				"targetname" ""
+			}
+		}
+		// elevator button lock trigger
+		"delete"
+		{
+			"hammerid" "2039226"
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"1326 671 -536"
+			"angles"	"0 270 0"
+		}
+		"door"
+		{
+			"origin"	"588 512 -475"
+			"angles"	"0 90 0"
+			"triggerid"	"td_1"
+			"output"	"OnClose"
+			"delay"		"1.0"
+			"portal"	"592 440 -475"
+		}
+		"eli_kliener_scene"
+		{
+			"origin"	"1130 1770 -270"
+			"angles"	"4.5 -150 0"
+			"triggerid"	"trig_eli_scene"
+			"output"	"OnTrigger"
+		}
+		"watchroom"
+		{
+			"origin"	"1104 1008 -251"
+			"angles"	"0 0 0"
+			"triggerid"	"lab2_door5"
+			"output"	"OnClose"
+			"delay"		"1.0"
+			"portal"	"1048 1008 -251"
+		}
+	}
+}

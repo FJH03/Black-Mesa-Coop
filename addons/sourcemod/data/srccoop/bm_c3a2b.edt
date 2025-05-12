@@ -1,0 +1,103 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Lambda Core"
+	"nextmap" "bm_c3a2c"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(ammo|suit|weapons)$/"
+		}
+	}
+	"entity"
+	{
+		// dont close blast doors at start
+		"modify"
+		{
+			"outputs"
+			{
+				"remove"
+				{
+					"target" "/blastdoor_right|blastdoor_left/"
+					"input" "Close"
+				}
+			}
+		}
+		// changelevel elevator - dont go all the way down
+		"modify"
+		{
+			"targetname" "transition_elevator_path2"
+			"set"
+			{
+				"origin"	"-376 -3032 -2584"
+			}
+			"outputs"
+			{
+				"remove" {}
+			}
+		}
+		// make first scientist invul until door opens
+		"delete"
+		{
+			"targetname"	"SCI01_critical"
+		}
+		"modify"
+		{
+			"targetname"	"SCI01_LastLambdaEntrance"
+			"set"
+			{
+				"damagefilter"	"__srccoop_damage_filter"
+			}
+		}
+		"modify"
+		{
+			"targetname"	"LC_blastdoor_template_door"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnOpen"
+					"target"	"SCI01_LastLambdaEntrance"
+					"input"		"SetDamageFilter"
+				}
+			}
+		}
+		// unset second scientist as vital ally
+		"modify"
+		{
+			"targetname" "SCI02_gluongun"
+			"set"
+			{
+				"GameEndAlly" "0"
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin" "3280 -2496 -2432"
+			"angles" "0 105 0"
+		}
+		"scientists"
+		{
+			"origin"	"400 -1824 -2259"
+			"angles"	"0 180 0"
+			"triggerid"	"LastLambdascene_triggercloseandlock"
+			"output"	"OnTrigger"
+			"portal"	"490 -1810 -2259"
+		}
+		"end"
+		{
+			"origin"	"0 0 32"
+			"angles"	"0 0 0"
+			"followid"	"transition_elevator"
+			"triggerid"	"transition_elevator"
+			"output"	"OnStart"
+			"portal"	"-247 -3032 -2083"
+			"delay"		"1"
+		}
+	}
+}

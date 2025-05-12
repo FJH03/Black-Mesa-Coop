@@ -1,0 +1,219 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Office Complex"
+	"nextmap" "bm_c1a2c"
+	"equipment"
+	{
+		"item"	"item_suit"
+		"item"	"item_weapon_crowbar"
+		"item"	"item_weapon_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_ammo_glock"
+		"item"	"item_weapon_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_ammo_shotgun"
+		"item"	"item_battery"
+		"item"	"item_battery"
+		"item"	"item_weapon_frag"
+	}
+	"entity"
+	{
+		// delete world starting equipment
+		"delete"
+		{
+			"targetname" "items_at_start"
+		}
+		// delay headcrab spawn to the start of the game
+		"modify"
+		{
+			"targetname" "StairwayHeadcrabSpawn"
+			"set"
+			{
+				"StartDisabled" "1"
+			}
+		}
+		"add"
+		{
+			"classname"		"logic_auto"
+			"targetname"	"StairwayHeadcrabSpawn_delay"
+			"outputs"
+			{
+				"add"
+				{
+					"output"	"OnMapSpawn"
+					"target"	"StairwayHeadcrabSpawn"
+					"input"		"Enable"
+				}
+			}
+		}
+		// delay map start
+		"modify"
+		{
+			"classname" "logic_auto"
+			"functions"
+			{
+				"delay_output" "OnMapSpawn"
+			}
+		}
+		// turn prev. changelevel trig into invisible wall
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c1a2a"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10" // dont render
+			}
+		}
+		// block going past changelevel
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_changelevel"
+					"landmark" "c1a2b_c1a2c_landmark_01"
+				}
+			}
+		}
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10" // dont render
+			"functions"
+			{
+				"copy_model"
+				{
+					"classname" "trigger_changelevel"
+					"landmark" "c1a2b_c1a2c_landmark_02"
+				}
+			}
+		}
+		//// NPC persistence `GRD02`
+		//"modify"
+		//{
+		//	"targetname" "GRD02"
+		//	"outputs"
+		//	{
+		//		"add"
+		//		{
+		//			"target" "GRD02_transition"
+		//			"output" "OnDeath"
+		//			"input"	"TurnOff"
+		//		}
+		//	}
+		//}
+		//"add"
+		//{
+		//	"classname"		"env_global"
+		//	"targetname"	"GRD02_transition"
+		//	"globalstate"	"GRD02_transition"
+		//	"initialstate"	"1"
+		//	"spawnflags"	"1"
+		//}
+		//// NPC persistence `SCI04`
+		//"modify"
+		//{
+		//	"targetname" "SCI04"
+		//	"outputs"
+		//	{
+		//		"add"
+		//		{
+		//			"target" "SCI04_transition"
+		//			"output" "OnDeath"
+		//			"input"	"TurnOff"
+		//		}
+		//	}
+		//}
+		//"add"
+		//{
+		//	"classname"		"env_global"
+		//	"targetname"	"SCI04_transition"
+		//	"globalstate"	"SCI04_transition"
+		//	"initialstate"	"1"
+		//	"spawnflags"	"1"
+		//}
+		//// NPC persistence `Grd01_Storage`
+		//"#if"
+		//{
+		//	"globalstate" "Grd01_Storage_transition"
+		//	"#then"
+		//	{
+		//		"add"
+		//		{
+		//			"classname"	"logic_auto"
+		//			"functions"
+		//			{
+		//				"delay_output" "OnMapSpawn"
+		//			}
+		//			"outputs"
+		//			{
+		//				"add"
+		//				{
+		//					"output" "OnMapSpawn"
+		//					"target" "Grd01_Storage_follow"
+		//					"input" "Activate"
+		//					"delay" "0"
+		//				}
+		//			}
+		//		}
+		//		"add"
+		//		{
+		//			"classname" "ai_goal_follow"
+		//			"targetname" "Grd01_Storage_follow"
+		//			"actor" "Grd01_Storage"
+		//			"goal"	"!player"
+		//			"MaximumState" "1"
+		//		}
+		//		"add"
+		//		{
+		//			"classname"		"env_global"
+		//			"targetname"	"Grd01_Storage_transition"
+		//			"globalstate"	"Grd01_Storage_transition"
+		//			"initialstate"	"1"
+		//			"spawnflags"	"1"
+		//		}
+		//		"add"
+		//		{
+		//			"classname" "npc_human_security"
+		//			"targetname" "Grd01_Storage"
+		//			"origin" "-2304 705 45"
+		//			"additionalequipment" "weapon_glock"
+		//			"AlwaysTransition" "No"
+		//			"angles" "0 150.5 0"
+		//			"CanSpeakWhileScripting" "No"
+		//			"expressiontype" "2"
+		//			"GameEndAlly" "No"
+		//			"physdamagescale" "1.0"
+		//			"renderamt" "255"
+		//			"rendercolor" "255 255 255"
+		//			"spawnflags" "131588"
+		//			"outputs"
+		//			{
+		//				"add"
+		//				{
+		//					"target" "Grd01_Storage_transition"
+		//					"output" "OnDeath"
+		//					"input"	"TurnOff"
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-2280 690 20"
+			"angles"	"-17.5 -107.5 0"
+		}
+	}
+}

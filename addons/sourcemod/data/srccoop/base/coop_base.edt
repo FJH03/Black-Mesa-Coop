@@ -1,0 +1,61 @@
+// This is the topmost base file
+
+"config"
+{
+	"features"
+	{
+		"FIRSTPERSON_DEATHCAM" "1"
+		"NOBLOCK" "1"
+		"SHOW_WELCOME_MESSAGE" "1"
+		"HEV_SOUNDS" "1"
+		"INSTANCE_ITEMS" "0"
+		"INSTANCE_ITEMS_NORESET" "0"
+		"DISABLE_CANISTER_DROPS" "0"
+		"AUTODETECT_MAP_END" "1"
+		"CHANGELEVEL_FX" "1"
+		"KEEP_EQUIPMENT" "0"
+		"TRANSFER_PLAYER_STATE" "1"
+	}
+	
+	"console"
+	{
+		// enable flashlight by default
+		"mp_flashlight" "1"
+
+		// disable forced respawn by default
+		"mp_forcerespawn" "0"
+		
+		// fix for breakmodels not appearing
+		"breakable_multiplayer" "0"
+		
+		// disables statistics, prevents a crash when a player drowns
+		"sv_ranked" "0"
+		
+		// disable warmup intermission pause
+		"mp_warmup_intermission_time" "0"
+
+		// disable deathmatch messages (dominating etc)
+		"bm_killstreaks_enabled" "0"
+	}
+
+	"client_console"
+	{
+		// fixes bugged trigger_teleport prediction (camera jerking around as if being teleported)
+		"cl_predicttriggers" "0"
+
+		// turn off ugly flashlights from other players
+		"r_flashlight_3rd_draw" "0"
+
+		// fix client viewmodel animation when always run is off, applied on spawn.
+		"sv_always_run" "~S 1"
+	}
+	
+	"equipment"
+	{
+		"defaults" "1"
+	}
+	
+	"entity_base_coop"
+	{
+	}
+}

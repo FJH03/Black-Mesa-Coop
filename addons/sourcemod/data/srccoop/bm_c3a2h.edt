@@ -1,0 +1,55 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Lambda Core"
+	"nextmap" "bm_c3a2i"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "/^(ammo|suit|weapons)$/"
+		}
+	}
+	"entity"
+	{
+		// make killer doors
+		"delete"
+		{
+			"targetname" "DepotDoorBlock"
+		}
+		"modify"
+		{
+			"targetname" "/^(DepotDoorLeftFUNC|DepotDoorRIGHTFUNC)$/"
+			"set"
+			{
+				"dmg" "999"
+				"forceclosed" "1"
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"0 -1680 -1047"
+			"angles"	"0 270 0"
+		}
+		"cutscene"
+		{
+			"origin"	"1792 -1072 9"
+			"angles"	"0 90 0"
+			"triggerid"	"DepotDoorRIGHTFUNC"
+			"output"	"OnFullyClosed"
+			"portal"	"1800 -1448 45"
+		}
+		"airlock"
+		{
+			"origin"	"2240 -320 32"
+			"angles"	"0 90 0"
+			"triggerid"	"airlock_relay1"
+			"output"	"OnTrigger"
+			"portal"	"2248 -560 72"
+		}
+	}
+}

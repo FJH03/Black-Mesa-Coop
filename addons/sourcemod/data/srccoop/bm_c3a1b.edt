@@ -1,0 +1,68 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "\"Forget About Freeman!\""
+	"nextmap" "bm_c3a2a"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "c3a1a_equipment"
+		}
+	}
+	"entity"
+	{
+		// no going back
+		"modify"
+		{
+			"classname" "trigger_changelevel"
+			"map" "bm_c3a1a"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10"
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"1568 -1591 -343"
+			"angles"	"0 184 0"
+		}
+		"garagedoor"
+		{
+			"origin"	"-1160 765 -355"
+			"angles"	"0 90 0"
+			"portal"	"-1160 590 -330"
+			"triggerid"	"bunker_west_entrance"
+			"output"	"OnFullyClosed"
+		}
+		"elevator"
+		{
+			"origin"	"-32 0 0"
+			"angles"	"0 0 0"
+			"followid"	"eb"
+			"triggerid"	"eb"
+			"output"	"OnPressed"
+			"bringall"	"1"
+		}
+		"aliengangbang"
+		{
+			"origin"	"-736 504 -1364"
+			"angles"	"0 0 0"
+			"triggerid"	"2617023"
+			"output"	"OnBreak"
+		}
+		"doublegate"
+		{
+			"origin"	"1400 228 -1536"
+			"angles"	"0 0 0"
+			"triggerid"	"lld2"
+			"output"	"OnFullyClosed"
+			"portal"	"1396 -89 -1507"
+		}
+	}
+}

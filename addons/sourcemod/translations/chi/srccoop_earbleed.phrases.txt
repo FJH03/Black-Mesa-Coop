@@ -1,0 +1,32 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"earbleed disabled"
+	{
+		"chi"			"爆炸回响音效已禁用。"
+	}
+
+	"earbleed enabled"
+	{
+		"chi"			"爆炸回响音效已启用。"
+	}
+
+	/* Menu */
+	
+	"disable earbleed"
+	{
+		"chi"			"禁用耳膜出血音效"
+	}
+
+	"enable earbleed"
+	{
+		"chi"			"启用耳膜出血音效"
+	}
+
+}

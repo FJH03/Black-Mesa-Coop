@@ -1,0 +1,214 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Interloper"
+	"nextmap" "bm_c4a3c2"
+	"features"
+	{
+		"FIRSTPERSON_DEATHCAM" "0"
+	}
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "interloper_equipment"
+		}
+	}
+	"entity"
+	{
+		// no going back
+		"modify"
+		{
+			"hammerid" "6640829"
+			"set"
+			{
+				"classname" "func_brush"
+				"rendermode" "10"
+			}
+		}
+		// block off next map
+		"add"
+		{
+			"classname" "func_brush"
+			"rendermode" "10"
+			"functions"
+			{
+				"set_model"
+				{
+					"origin" "4816 4144 -12368"
+					"size" "32 160 244"
+				}
+			}
+		}
+		// set alarm fire once
+		"modify"
+		{
+			"hammerid" "4470380"
+			"set"
+			{
+				"classname" "trigger_once"
+			}
+		}
+		// controllers and vorts fix
+		"add"
+		{
+			"classname" "point_template"
+			"spawnflags" "2"
+			"targetname" "control_cage_controller_template"
+			"Template01" "control_cage_controller*"
+		}
+		"modify"
+		{
+			"hammerid" "5947531"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "control_cage_controller_template"
+					"input"	"ForceSpawn"
+				}
+			}
+		}
+		"add"
+		{
+			"classname" "point_template"
+			"spawnflags" "2"
+			"targetname" "sprint_vort_template"
+			"Template01" "sprint_xort"
+		}
+		"modify"
+		{
+			"hammerid" "6384524"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "sprint_vort_template"
+					"input"	"ForceSpawn"
+				}
+			}
+		}
+		"add"
+		{
+			"classname" "point_template"
+			"spawnflags" "2"
+			"targetname" "sprint_controller_template"
+			"Template01" "sprint_controller*"
+		}
+		"modify"
+		{
+			"hammerid" "6355697"
+			"outputs"
+			{
+				"add"
+				{
+					"output" "OnTrigger"
+					"target" "sprint_controller_template"
+					"input"	"ForceSpawn"
+				}
+			}
+		}
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"-7814 561 -13009"
+			"angles"	"0 -130 0"
+		}
+		"after control room"
+		{
+			"origin"	"-2288 -2408 -13114"
+			"angles"	"0 20 0"
+			"triggerid"	"6384524"
+			"output"	"OnTrigger"
+		}
+		"sprint checkpoint 1.1"
+		{
+			"origin"	"-1064 -1192 -12931"
+			"angles"	"0 45 0"
+			"triggerid"	"sprint_shield2_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 1.2"
+		{
+			"origin"	"-1064 -1192 -12931"
+			"angles"	"0 45 0"
+			"triggerid"	"sprint_shield3_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 2.1"
+		{
+			"origin"	"48 -880 -12707"
+			"angles"	"0 20 0"
+			"triggerid"	"sprint_shield5_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 2.2"
+		{
+			"origin"	"48 -880 -12707"
+			"angles"	"0 20 0"
+			"triggerid"	"sprint_shield4_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 3.1"
+		{
+			"origin"	"1134 221 -12936"
+			"angles"	"0 5 0"
+			"triggerid"	"sprint_shield6_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 3.2"
+		{
+			"origin"	"1134 221 -12936"
+			"angles"	"0 5 0"
+			"triggerid"	"sprint_shield7_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 4.1"
+		{
+			"origin"	"2251 259 -12771"
+			"angles"	"0 45 0"
+			"triggerid"	"sprint_shield9_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 4.2"
+		{
+			"origin"	"2251 259 -12771"
+			"angles"	"0 45 0"
+			"triggerid"	"sprint_shield8_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 5.1"
+		{
+			"origin"	"3232 1241 -12796"
+			"angles"	"0 30 0"
+			"triggerid"	"sprint_shield11_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 5.2"
+		{
+			"origin"	"3232 1241 -12796"
+			"angles"	"0 30 0"
+			"triggerid"	"sprint_shield10_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 6.1"
+		{
+			"origin"	"3557 2767 -12867"
+			"angles"	"0 0 0"
+			"triggerid"	"sprint_shield12_heart"
+			"output"	"OnBreak"
+		}
+		"sprint checkpoint 6.2"
+		{
+			"origin"	"3557 2767 -12867"
+			"angles"	"0 0 0"
+			"triggerid"	"sprint_shield13_heart"
+			"output"	"OnBreak"
+		}
+	}
+}

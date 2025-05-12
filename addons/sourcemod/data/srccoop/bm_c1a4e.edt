@@ -1,0 +1,32 @@
+#base "base/bm_sp_campaign.edt"
+
+"config"
+{
+	"chapter" "Blast Pit"
+	"nextmap" "bm_c2a1a"
+	"equipment"
+	{
+		"lookup"
+		{
+			"targetname" "c1a4e_equipment"
+		}
+	}
+	"entity"
+	{
+	}
+	"checkpoint"
+	{
+		"spawn"
+		{
+			"origin"	"128 128 -1909"
+			"angles"	"0 225 0"
+		}
+		"outlook"
+		{
+			"origin"	"144 -536 -1916"
+			"angles"	"0 285 0"
+			"triggerid"	"trigger_cc_radiation01"
+			"output"	"OnStartTouch"
+		}
+	}
+}

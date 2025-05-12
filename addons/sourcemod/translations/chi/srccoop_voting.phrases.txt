@@ -1,0 +1,136 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	/* Menu */
+	
+	"SkipIntroVote"
+	{
+		"chi"			"跳过介绍动画"
+	}
+
+	"RestartMapVote"
+	{
+		"chi"			"重新开始目前地图"
+	}
+
+	"MapVote"
+	{
+		"chi"			"更换地图"
+	}
+
+	"SurvivalVote"
+	{
+		"chi"			"生存模式"
+	}
+
+	"start disable vote"
+	{
+		"#format"		"{1:t}" // vote subject
+		"chi"			"关闭 {1}"
+	}
+
+	"start enable vote"
+	{
+		"#format"		"{1:t}" // vote subject
+		"chi"			"开启 {1}"
+	}
+
+	"select a map"
+	{
+		"chi"			"选择一张地图:"
+	}
+
+	"change map to?"
+	{
+		"#format"		"{1:s}" // map name
+		"chi"			"更换地图至 {1}?"
+	}
+
+	/* chat / console */
+
+	"reloading maps"
+	{
+		"chi"			"重新载入地圖。"
+	}
+
+	"scanned maps"
+	{
+		"#format"		"{1:d},{2:f}" // number of maps, duration
+		"chi"			"在 {2} 秒內扫描了 {1} 张地图以供投票。"
+	}
+
+	"changing map to"
+	{
+		"#format"		"{1:s}" // map name
+		"chi"			"正在更换地图至 {ter}{1}{pri}..."
+	}
+
+	"restarting map"
+	{
+		"chi"			"正在重新开始地图..."
+	}
+
+	"not intro map"
+	{
+		"chi"			"这不是介绍地图。"
+	}
+
+	"vote disabled"
+	{
+		"#format"		"{1:t}" // vote type
+		"chi"			"{ter}{1}{pri} 投票在此服务器上已关闭。"
+	}
+
+	"vote cooldown"
+	{
+		"#format"		"{1:t},{2:s}" // vote type, cooldown
+		"chi"			"{ter}{1}{pri} 投票在 {ter}{2} 后才能使用。"
+	}
+
+	"vote started"
+	{
+		"#format"		"{1:t}" // vote type
+		"chi"			"{ter}{1}{pri} 投票已开始！"
+	}
+
+	"vote started by player"
+	{
+		"#format"		"{1:N},{2:t}" // player, vote type
+		"chi"			"{ter}{2}{pri} 投票已由 {ter}{1}{pri} 发起！"
+	}
+
+	"player voted"
+	{
+		"#format"		"{1:N}" // player
+		"chi"			"{1} 已投票{ter}"
+	}
+
+	"vote successful"
+	{
+		"chi"			"投票成功！"
+	}
+
+	"vote unsuccessful"
+	{
+		"chi"			"投票失败。"
+	}
+
+	"disable vote successful"
+	{
+		"#format"		"{1:t}" // vote subject
+		"chi"			"{ter}{1}{pri} 关闭！"
+	}
+
+	"enable vote successful"
+	{
+		"#format"		"{1:t}" // vote subject
+		"chi"			"{ter}{1}{pri} 开启！"
+	}
+
+}
