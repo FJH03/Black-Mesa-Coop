@@ -1,0 +1,32 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"thirdperson blocked"
+	{
+		"chi"			"第三人称模式目前已关闭。"
+	}
+
+	"thirdperson enter"
+	{
+		"chi"			"你现在处于第三人称模式。"
+	}
+
+	"thirdperson exit"
+	{
+		"chi"			"你不再处于第三人称模式。"
+	}
+
+	/* Menu */
+
+	"toggle thirdperson"
+	{
+		"chi"			"切换第三人称模式"
+	}
+
+}

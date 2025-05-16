@@ -1,0 +1,189 @@
+"Phrases"
+{
+	/* 
+	  SourceCoop supports built-in color placeholders.
+	  {pri} - primary color - for general text, default
+	  {sec} - secondary color - used for the SRCCOOP tag
+	  {ter} - tertiary color - for highlights
+	*/
+
+	"welcome"
+	{
+		"#format"		"{1:s}" // version
+		"chi"			"此服务器运行 {ter}SourceCoop v{1}{pri}\n按下 {sec}={pri} 或输入 {sec}/{ter}coopmenu{pri} 以显示额外选项。"
+	}
+
+	"map start"
+	{
+		"#format"		"{1:s}" // map name
+		"chi"			"合作模式地图 {1} 已开始。"
+	}
+
+	"changing map"
+	{
+		"chi"			"正在更换地图。"
+	}
+
+	"player"
+	{
+		"chi"			"玩家"
+	}
+
+	"players"
+	{
+		"chi"			"玩家们"
+	}
+
+	"feature enabled"
+	{
+		"#format"		"{1:s}" // feature
+		"chi"			"已启用功能 {1}"
+	}
+
+	"feature disabled"
+	{
+		"#format"		"{1:s}" // feature
+		"chi"			"已停用功能 {1}"
+	}
+
+	"feature unknown"
+	{
+		"#format"		"{1:s}" // feature
+		"chi"			"未知功能: {1}"
+	}
+
+	"menu unavailable"
+	{
+		"chi"			"合作模式菜单目前无法使用。"
+	}
+
+	"menu title"
+	{
+		"chi"			"SourceCoop 菜单"
+	}
+
+	"menu category player"
+	{
+		"chi"			"玩家设定"
+	}
+
+	"menu category sounds"
+	{
+		"chi"			"声音设定"
+	}
+
+	"menu category votes"
+	{
+		"chi"			"投票"
+	}
+
+	"menu category other"
+	{
+		"chi"			"其他"
+	}
+
+	"checkpoint reached"
+	{
+		"chi"			"已到达检查点"
+	}
+
+	"survival respawn hint checkpoint"
+	{
+		"chi"			"你将在下一个检查点重生。"
+	}
+
+	"survival respawn hint no checkpoint"
+	{
+		"chi"			"当所有人都死亡后，你将重生。"
+	}
+
+	"survival restart last checkpoint"
+	{
+		"chi"			"再试一次！从最后一个检查点开始..."
+	}
+
+	"survival game over"
+	{
+		"chi"			"任务：终止\n目标：弗里曼\n原因：未能保护任务关键人员"
+	}
+
+	"equipment saved"
+	{
+		"chi"			"设备已成功储存。"
+	}
+
+	"equipment export fail"
+	{
+		"#format"		"{1:s}" // filepath
+		"chi"			"储存设备到档案时发生错误: {1}"
+	}
+
+	"equipment export no players"
+	{
+		"chi"			"未找到有效的玩家，储存已取消。"
+	}
+
+	"equipment import file not found"
+	{
+		"#format"		"{1:s}" // filepath
+		"chi"			"无法找到指定的储存档案: {1}"
+	}
+
+	"equipment import fail"
+	{
+		"#format"		"{1:s}" // filepath
+		"chi"			"储存档案格式不正确: {1}"
+	}
+
+	"equipment loaded"
+	{
+		"#format"		"{1:N}" // player
+		"chi"			"已载入玩家状态: {1}"
+	}
+
+	"equipment not loaded"
+	{
+		"#format"		"{1:N},{2:s}" // player, error message
+		"chi"			"无法载入玩家资料: {1}. {2}"
+	}
+
+	"equipment load unknown steamid"
+	{
+		"chi"			"SteamID 未知。"
+	}
+
+	"equipment load player not found"
+	{
+		"#format"		"{1:s}" // steamid
+		"chi"			"未找到该 SteamID 的储存资料: {1}"
+	}
+
+	"equipment load missing section"
+	{
+		"#format"		"{1:s}" // section
+		"chi"			"在储存档案中 \"{1}\" 缺少区段!"
+	}
+
+	"equipment cleared"
+	{
+		"chi"			"成功清除玩家状态。"
+	}
+
+	"entity suicided"
+	{
+		"#format"		"{1:s}" // attacker
+		"chi"			"{1} 自杀了！"
+	}
+	
+	"entity killed entity with weapon"
+	{
+		"#format"		"{1:s},{2:s},{3:s}" // attacker, victim, weapon
+		"chi"			"{1} 用 {3} 杀死了 {2}!"
+	}
+
+	"entity killed entity"
+	{
+		"#format"		"{1:s},{2:s}" // attacker, victim
+		"chi"			"{1} 杀死 {2}!"
+	}
+}
