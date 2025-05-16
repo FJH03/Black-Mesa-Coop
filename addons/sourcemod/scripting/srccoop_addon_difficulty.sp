@@ -1,7 +1,7 @@
 #include <sourcemod>
 #include <sdkhooks>
 
-#include <srccoop_api>
+#include <srccoop_addon>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -37,8 +37,8 @@ public void OnPluginStart()
 	InitSourceCoopAddon();
 
 	g_pConvarDifficulty = CreateConVar("sourcecoop_difficulty", "0", "Sets the difficulty - from 0 (base difficulty) and up.", _, true, 0.0);
-	g_pConvarDifficultyAuto = CreateConVar("sourcecoop_difficulty_auto", "2", "Sets automatic difficulty mode. -1 disables. 0 balances difficulty between min and max convars. Values above 0 set the difficulty increment per player, ignoring the min and max cvars.", _, true, -1.0);
-	g_pConvarDifficultyAutoMin = CreateConVar("sourcecoop_difficulty_auto_min", "1", "When automatic difficulty mode is set to 0, this is the difficulty at 1 player.", _, true, 0.0);
+	g_pConvarDifficultyAuto = CreateConVar("sourcecoop_difficulty_auto", "1", "Sets automatic difficulty mode. -1 disables. 0 balances difficulty between min and max convars. Values above 0 set the difficulty increment per player, ignoring the min and max cvars.", _, true, -1.0);
+	g_pConvarDifficultyAutoMin = CreateConVar("sourcecoop_difficulty_auto_min", "0", "When automatic difficulty mode is set to 0, this is the difficulty at 1 player.", _, true, 0.0);
 	g_pConvarDifficultyAutoMax = CreateConVar("sourcecoop_difficulty_auto_max", "20", "When automatic difficulty mode is set to 0, this is the difficulty at max players.", _, true, 0.0);
 	g_pConvarDifficultyAnnounce = CreateConVar("sourcecoop_difficulty_announce", "1", "Toggles announcing changes in difficulty.", _, true, 0.0, true, 1.0);
 	g_pConvarDifficultyIgnoreDamageTo = CreateConVar("sourcecoop_difficulty_ignoredmgto", "npc_headcrab;npc_barnacle;npc_puffballfungus", "List of classnames where player->npc damage is exempt from difficulty scaling. Separated by semicolon.");
@@ -118,7 +118,7 @@ public void Frame_PlayerChangeTeamPost()
 
 void UpdateAutoDifficulty()
 {
-	if (g_pConvarDifficultyAuto.FloatValue == 0)
+	if (g_pConvarDifficultyAuto.FloatValue == 0.0)
 	{
 		int min = g_pConvarDifficultyAutoMin.IntValue;
 		int max = g_pConvarDifficultyAutoMax.IntValue;
@@ -134,14 +134,14 @@ void UpdateAutoDifficulty()
 	}
 	else if (g_pConvarDifficultyAuto.FloatValue > 0.0)
 	{
-		g_pConvarDifficulty.IntValue = RoundFloat(g_pConvarDifficultyAuto.FloatValue * GetRealClientCount(true, false, true));
+		g_pConvarDifficulty.IntValue = RoundFloat(g_pConvarDifficultyAuto.FloatValue * (GetRealClientCount(true, false, true) - 1));
 	}
 }
 
 public void OnEntityCreated(int iEntIndex, const char[] szClassname)
 {
 	CBaseEntity pEntity = CBaseEntity(iEntIndex);
-	if (pEntity.IsClassNPC())
+	if (pEntity.IsNPC())
 	{
 		SDKHook(iEntIndex, SDKHook_OnTakeDamage, Hook_OnNpcTakeDamage);
 		
@@ -158,7 +158,7 @@ public Action Hook_OnPlayerTakeDamage(int victim, int &attacker, int &inflictor,
 	{
 		CBaseEntity pAttacker = CBaseEntity(attacker);
 		
-		if (pAttacker.IsClassNPC() && PassIgnoreMap(g_pMapIgnoredFrom, attacker))
+		if (pAttacker.IsNPC() && PassIgnoreMap(g_pMapIgnoredFrom, attacker))
 		{
 			damage += g_iDifficulty * SCALE * damage;
 			return Plugin_Changed;
@@ -173,7 +173,7 @@ public Action Hook_OnNpcTakeDamage(int victim, int &attacker, int &inflictor, fl
 	{
 		CBaseEntity pAttacker = CBaseEntity(attacker);
 		
-		if (pAttacker.IsClassPlayer() && PassIgnoreMap(g_pMapIgnoredTo, victim))
+		if (pAttacker.IsPlayer() && PassIgnoreMap(g_pMapIgnoredTo, victim))
 		{
 			damage = damage / (g_iDifficulty * SCALE + 1);
 			return Plugin_Changed;

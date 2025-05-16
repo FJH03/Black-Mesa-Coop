@@ -1,8 +1,3 @@
-#if defined _srccoop_globals_included
- #endinput
-#endif
-#define _srccoop_globals_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -25,17 +20,28 @@ ConVar g_pConvarDefaultMapConfigDest;
 ConVar g_pConvarDisableTeamSelect;
 #endif
 
-// Existing ConVars
+#if defined SRCCOOP_BLACKMESA
+ConVar g_pConvarCleanHud;
+#endif
+
+// Existing ConVars.
 ConVar mp_friendlyfire;
 ConVar mp_flashlight;
 ConVar mp_forcerespawn;
 
+// Existing Black Mesa ConVars.
+
+#if defined SRCCOOP_BLACKMESA
+ConVar sv_always_run;
+ConVar sv_speed_sprint;
+ConVar sv_speed_walk;
+ConVar sv_jump_long_enabled;
+ConVar sv_long_jump_manacost;
+#endif
+
 // ----------------------------
 // SDK Calls
 // ----------------------------
-#if defined PLAYERPATCH_SERVERSIDE_RAGDOLLS
-Handle g_pCreateServerRagdoll;
-#endif
 
 // ----------------------------
 // DHooks
@@ -161,8 +167,10 @@ DynamicDetour hkPhysics_RunThinkFunctions;
 DynamicDetour hkDissolve;
 #endif
 
-#if defined GAMEPATCH_UTIL_FINDCLIENTINPVSGUTS
+#if defined GAMEPATCH_UTIL_FINDCLIENT
 DynamicDetour hkUtilFindClientInPVSGuts;
+DynamicDetour hkUtilFindClientInPVS;
+DynamicDetour hkUtilFindClientInVisibilityPVS;
 #endif
 
 #if defined ENTPATCH_SCRIPTED_SEQUENCE
@@ -191,13 +199,6 @@ DynamicDetour hkTestGroundMove;
 // MemPatches
 // ----------------------------
 ArrayList g_pCoopModeMemPatchList;
-
-// ----------------------------
-// Adresses, Interfaces
-// ----------------------------
-IServerGameDLL g_ServerGameDLL;
-IServerTools g_ServerTools;
-CGlobalVars gpGlobals;
 
 // ----------------------------
 // Plugin variables

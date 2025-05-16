@@ -22,35 +22,9 @@ void LoadGameData()
 
 	// Init SDKCalls for classdef
 	InitClassdef(pGameConfig);
-	
-	if (!(g_ServerGameDLL = IServerGameDLL(GetInterface(pGameConfig, "server", "IServerGameDLL"))))
-		SetFailState("Could not get interface for %s", "IServerGameDLL");
-
-	if (!(g_ServerTools = IServerTools(GetInterface(pGameConfig, "server", "IServerTools"))))
-		SetFailState("Could not get interface for %s", "IServerTools");
-	
-	if (!(gpGlobals = g_pPlayerInfoManager.GetGlobalVars()))
-		SetFailState("Could not get gpGlobals from PlayerInfoManager");
-	
-	// Calls
-
-	#if defined PLAYERPATCH_SERVERSIDE_RAGDOLLS
-	char szCreateServerRagdoll[] = "CreateServerRagdoll";
-	StartPrepSDKCall(SDKCall_Static);
-	if (!PrepSDKCall_SetFromConf(pGameConfig, SDKConf_Signature, szCreateServerRagdoll))
-		SetFailState("Could not obtain gamedata signature %s", szCreateServerRagdoll);
-	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer); // CBaseAnimating *pAnimating
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // int forceBone
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const CTakeDamageInfo &info
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // int collisionGroup
-	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain); // bool bUseLRURetirement
-	if (!(g_pCreateServerRagdoll = EndPrepSDKCall()))
-		SetFailState("Could not prep SDK call %s", szCreateServerRagdoll);
-	#endif
 
 	LoadDHookVirtual(pGameConfig, hkLevelInit, "CServerGameDLL::LevelInit");
-	if (hkLevelInit.HookRaw(Hook_Pre, view_as<Address>(g_ServerGameDLL), Hook_OnLevelInit) == INVALID_HOOK_ID)
+	if (hkLevelInit.HookRaw(Hook_Pre, IServerGameDLL.Get().GetAddress(), Hook_OnLevelInit) == INVALID_HOOK_ID)
 		SetFailState("Could not hook CServerGameDLL::LevelInit");
 	
 	LoadDHookVirtual(pGameConfig, hkChangeTeam, "CBasePlayer::ChangeTeam");
@@ -181,8 +155,17 @@ void LoadGameData()
 	LoadDHookDetour(pGameConfig, hkDissolve, "CBaseAnimating::Dissolve", Hook_Dissolve);
 	#endif
 	
-	#if defined GAMEPATCH_UTIL_FINDCLIENTINPVSGUTS
-	LoadDHookDetour(pGameConfig, hkUtilFindClientInPVSGuts, "UTIL_FindClientInPVSGuts", Hook_UTIL_FindClientInPVSGuts);
+	#if defined GAMEPATCH_UTIL_FINDCLIENT
+	if (g_serverOS == OS_Windows)
+	{
+		LoadDHookDetour(pGameConfig, hkUtilFindClientInPVSGuts, "UTIL_FindClientInPVSGuts", Hook_UTIL_FindClient);
+	}
+	else if (g_serverOS == OS_Linux)
+	{
+		// `UTIL_FindClientInPVSGuts` is inlined on Linux into these functions.
+		LoadDHookDetour(pGameConfig, hkUtilFindClientInPVS, "UTIL_FindClientInPVS", Hook_UTIL_FindClient);
+		LoadDHookDetour(pGameConfig, hkUtilFindClientInVisibilityPVS, "UTIL_FindClientInVisibilityPVS", Hook_UTIL_FindClient);
+	}
 	#endif
 
 	#if defined ENTPATCH_SCRIPTED_SEQUENCE
@@ -192,7 +175,7 @@ void LoadGameData()
 	#if defined GAMEPATCH_PREDICTED_EFFECTS
 	LoadDHookDetour(pGameConfig, hkIgnorePredictionCull, "CRecipientFilter::IgnorePredictionCull", Hook_IgnorePredictionCull);
 	LoadDHookVirtual(pGameConfig, hkDispatchEffect, "CTempEntsSystem::DispatchEffect");
-	if (hkDispatchEffect.HookRaw(Hook_Pre, g_ServerTools.GetTempEntsSystem(), Hook_DispatchEffect) == INVALID_HOOK_ID)
+	if (hkDispatchEffect.HookRaw(Hook_Pre, IServerTools.Get().GetTempEntsSystem(), Hook_DispatchEffect) == INVALID_HOOK_ID)
 		SetFailState("Could not hook CTempEntsSystem::DispatchEffect");
 	#endif
 
@@ -235,16 +218,6 @@ void ToggleGlobalPatches(bool bCoopMode)
 	}
 }
 
-void LoadConfig()
-{
-	GameData pGameConfig = LoadGameConfigFile(SRCCOOP_CONFIG_GAMEDATA_NAME);
-	if (pGameConfig == null)
-		SetFailState("Couldn't load game config: \"%s\"", SRCCOOP_CONFIG_GAMEDATA_NAME);
-	
-	Conf.Initialize(pGameConfig);
-	pGameConfig.Close();
-}
-
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	#if defined CHECK_ENGINE
@@ -262,15 +235,18 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	LoadConfig();
+	Conf.Initialize(LoadSourceCoopConfig());
 	LoadGameData();
 	LoadTranslations("common.phrases"); /* reuse some translations (identified by use of capital letters) */
 	LoadTranslations("srccoop.phrases");
 	InitDebugLog("sourcecoop_debug", "SRCCOOP", ADMFLAG_ROOT);
 	CreateConVar("sourcecoop_version", SRCCOOP_VERSION, _, FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
-	g_pConvarCoopTeam = CreateConVar("sourcecoop_team", "scientist", "Sets which team to use in TDM mode. Valid values are [marines] or [scientist] or a team number. Setting anything else will not manage teams.");
+	g_pConvarCoopTeam = CreateConVar("sourcecoop_team", "3", "Sets which team to use in TDM mode. Accepts either a (partial) team name or a team number. Invalid values will disable team enforcement.");
 	#if defined GAMEPATCH_TEAMSELECT_UI
 	g_pConvarDisableTeamSelect = CreateConVar("sourcecoop_disable_teamselect", "1", "Whether to skip the team select screen and spawn in instantly.", _, true, 0.0, true, 1.0);
+	#endif
+	#if defined SRCCOOP_BLACKMESA
+	g_pConvarCleanHud = CreateConVar("sourcecoop_clean_hud", "1", "Whether to hide non-essential hud elements. (Black Mesa: hides status at top of the screen)", _, true, 0.0, true, 1.0);
 	#endif
 	g_pConvarCoopRespawnTime = CreateConVar("sourcecoop_respawntime", "2.0", "Sets player respawn time in seconds.", _, true, 0.1);
 	g_pConvarStartWaitPeriod = CreateConVar("sourcecoop_start_wait_period", "15.0", "The max number of seconds to wait since first player spawned in to start the map. ", _, true, 0.0);
@@ -286,6 +262,20 @@ public void OnPluginStart()
 	mp_friendlyfire = FindConVar("mp_friendlyfire");
 	mp_flashlight = FindConVar("mp_flashlight");
 	mp_forcerespawn = FindConVar("mp_forcerespawn");
+
+	// Black Mesa ConVars.
+	#if defined SRCCOOP_BLACKMESA
+	sv_always_run = FindConVar("sv_always_run");
+	sv_speed_sprint = FindConVar("sv_speed_sprint");
+	sv_speed_walk = FindConVar("sv_speed_walk");
+	sv_jump_long_enabled = FindConVar("sv_jump_long_enabled");
+	sv_long_jump_manacost = FindConVar("sv_long_jump_manacost");
+	#endif
+
+	#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+	sv_always_run.Flags &= ~FCVAR_REPLICATED;
+	HookConVarChange(sv_always_run, Hook_ConVar_AlwaysRun);
+	#endif
 	
 	RegAdminCmd("sourcecoop_ft", Command_SetFeature, ADMFLAG_ROOT, "Command for toggling plugin features on/off");
 	RegAdminCmd("sc_ft", Command_SetFeature, ADMFLAG_ROOT, "Command for toggling plugin features on/off");
@@ -304,6 +294,10 @@ public void OnPluginStart()
 	EquipmentManager.Initialize();
 	DnManager.Initialize();
 	InitializeMenus();
+	
+	#if defined SRCCOOP_BLACKMESA
+	IdleAnims_Initialize();
+	#endif
 	
 	g_CoopMapStartFwd = new GlobalForward("SC_OnCoopMapStart", ET_Ignore);
 	g_CoopMapConfigLoadedFwd = new GlobalForward("SC_OnCoopMapConfigLoaded", ET_Ignore, Param_Cell, Param_Cell);
@@ -349,6 +343,11 @@ public void OnPluginStart()
 			}
 		}
 	}
+
+	#if defined ENTPATCH_BARNACLE_PREDICTION
+	HookEntityOutput("npc_barnacle", "OnGrab", Hook_Barnacle_OnGrab);
+	HookEntityOutput("npc_barnacle", "OnRelease", Hook_Barnacle_OnRelease);
+	#endif
 }
 
 #pragma dynamic ENTITYSTRING_LENGTH
@@ -379,6 +378,10 @@ public MRESReturn Hook_OnLevelInit(DHookReturn hReturn, DHookParam hParams)
 	// This ends up calling our hook for `CParamsManager::InitInstances`.
 	#if defined ENTPATCH_BM_SP_WEAPONS
 	ServerCommand("params_reload_server");
+	#endif
+
+	#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+	SetMovementPredictionConVars();
 	#endif
 
 	if (bCoopMode)
@@ -415,7 +418,7 @@ public void OnMapStart()
 		CBaseEntity pEnt = g_pPostponedSpawns.Get(i);
 		RequestFrame(SpawnPostponedItem, pEnt);
 	}
-	
+
 	g_pPostponedSpawns.Clear();
 	g_bMapStarted = true;
 }
@@ -597,7 +600,7 @@ public void OnEntityCreated(int iEntIndex, const char[] szClassname)
 	SDKHook(iEntIndex, SDKHook_Spawn, Hook_FixupBrushModels);
 	SDKHook(iEntIndex, SDKHook_SpawnPost, Hook_EntitySpawnPost);
 	
-	bool bIsNPC = pEntity.IsClassNPC();
+	bool bIsNPC = pEntity.IsNPC();
 
 	if (bIsNPC)
 	{
@@ -691,6 +694,14 @@ public void OnEntityCreated(int iEntIndex, const char[] szClassname)
 	}
 	else // !isNPC
 	{
+		#if defined ENTPATCH_BM_XENPORTAL_PUSH_PLAYERS
+		if (strcmp(szClassname, "env_xen_portal_effect") == 0)
+		{
+			DHookEntity(hkAcceptInput, false, iEntIndex, _, Hook_XenPortalEffect_AcceptInput);
+			return;
+		}
+		#endif
+
 		#if defined ENTPATCH_BM_SP_WEAPONS
 		if (strcmp(szClassname, "grenade_frag") == 0)
 		{
@@ -876,7 +887,7 @@ public void OnEntityCreated(int iEntIndex, const char[] szClassname)
 		#endif
 
 		#if defined ENTPATCH_WEAPON_MODELS
-		if (pEntity.IsClassWeapon())
+		if (pEntity.IsWeapon())
 		{
 			DHookEntity(hkSetModel, false, iEntIndex, _, Hook_WeaponSetModel);
 			return;
@@ -982,16 +993,19 @@ public void Hook_EntitySpawnPost(int iEntIndex)
 		CBaseEntity pEntity = CBaseEntity(iEntIndex);
 
 		#if defined SRCCOOP_BLACKMESA
-		// fix linux physics crashes
 		if (g_serverOS == OS_Linux)
 		{
-			static char szModel[PLATFORM_MAX_PATH];
-			if (pEntity.GetModelName(szModel, sizeof(szModel)) && strncmp(szModel, "models/gibs/humans/", 19) == 0)
+			#if defined ENTPATCH_NPC_ALWAYS_TRANSMIT
+			// fix NPC sliding (likely caused by desync in CBaseAnimatingOverlay animations started outside of PVS)
+			// this is verifiable on linux server on bm_c1a2c by issuing cl_fullupdate when the guard starts sliding
+			if (pEntity.IsNPC())
 			{
-				SDKHook(iEntIndex, SDKHook_OnTakeDamage, Hook_NoDmg);
+				pEntity.edictFlags |= FL_EDICT_ALWAYS;
 			}
+			#endif
 		}
-		#endif
+		#endif // SRCCOOP_BLACKMESA
+
 		CoopManager.EntitySpawnPost(pEntity);
 	}
 }
@@ -1018,19 +1032,11 @@ public void SpawnPostponedItem(CBaseEntity pEntity)
 {
 	if (pEntity.IsValid())
 	{
-		SDKHook(pEntity.GetEntIndex(), SDKHook_SpawnPost, Hook_Instancing_ItemSpawn);
+		SDKHook(pEntity.entindex, SDKHook_SpawnPost, Hook_Instancing_ItemSpawn);
 		g_bIsMultiplayerOverride = false; // IsMultiplayer=false will spawn items with physics
 		pEntity.Spawn();
 		g_bIsMultiplayerOverride = true;
 		pEntity.SetCollisionGroup(COLLISION_GROUP_WEAPON);
-	}
-}
-
-public void RequestStopThink(CBaseEntity pEntity)
-{
-	if (pEntity.IsValid())
-	{
-		pEntity.SetNextThinkTick(0);
 	}
 }
 
@@ -1062,7 +1068,7 @@ public MRESReturn Hook_OnEquipmentTryPickUpPost(int _this, Handle hReturn, Handl
 		if (bPickedUp)
 		{
 			CBasePlayer pPlayer = CBasePlayer(DHookGetParam(hParams, 1));
-			if (pPlayer.IsClassPlayer())
+			if (pPlayer.IsPlayer())
 			{
 				CBaseEntity pItem = CBaseEntity(_this);
 				char szClass[MAX_CLASSNAME];
@@ -1085,7 +1091,7 @@ public void Hook_PlayerWeaponEquipPost(int client, int weapon)
 	}
 }
 
-public MRESReturn Hook_RestoreWorld(Handle hReturn)
+public MRESReturn Hook_RestoreWorld(DHookReturn hReturn)
 {
 	if (CoopManager.IsCoopModeEnabled())
 	{
@@ -1096,7 +1102,7 @@ public MRESReturn Hook_RestoreWorld(Handle hReturn)
 	return MRES_Ignored;
 }
 
-public MRESReturn Hook_RespawnPlayers(Handle hReturn)
+public MRESReturn Hook_RespawnPlayers(DHookReturn hReturn)
 {
 	if (CoopManager.IsCoopModeEnabled())
 	{
@@ -1114,3 +1120,21 @@ void GreetPlayer(int client)
 		Msg(client, "%t", "welcome", SRCCOOP_VERSION);
 	}
 }
+
+//stock void Test_ConstGetMaxFormatLengthInt()
+//{
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(0), 2);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(1), 2);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(16), 3);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(256), 4);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(4096), 5);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(99999), 6);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(2147483647), 11);
+//    
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-1), 3);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-16), 4);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-256), 5);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-4096), 6);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-99999), 7);
+//    assert_eq(CONST_GET_MAX_FORMAT_LENGTH_INT(-2147483648), 12);
+//}

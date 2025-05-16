@@ -1,8 +1,3 @@
-#if defined _srccoop_included
-	#endinput
-#endif
-#define _srccoop_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -44,6 +39,7 @@
 	#define ENTPATCH_FUNC_TRACKAUTOCHANGE
 	#define ENTPATCH_FUNC_TRACKTRAIN
 	#define ENTPATCH_NPC_RUNTASK
+	#define ENTPATCH_BARNACLE_PREDICTION
 	
 	#define PLAYERPATCH_SUIT_SOUNDS
 	#define PLAYERPATCH_PICKUP_FORCEPLAYERTODROPTHISOBJECT
@@ -53,7 +49,7 @@
 	#define GAMEPATCH_UTIL_GETLOCALPLAYER
 	#define GAMEPATCH_IS_MULTIPLAYER
 	#define GAMEPATCH_PREDICTED_EFFECTS
-	#define GAMEPATCH_UTIL_FINDCLIENTINPVSGUTS
+	//#define GAMEPATCH_UTIL_FINDCLIENT
 
 #else
 	
@@ -80,7 +76,6 @@
 	#define ENTPATCH_ENV_SPRITE
 	#define ENTPATCH_AI_SCRIPT_CONDITIONS
 	#define ENTPATCH_LAGCOMP_POSE_PARAMS
-	#define ENTPATCH_FUNC_ROTATING
 	#define ENTPATCH_PLAYER_LOADSAVED
 	#define ENTPATCH_LOGIC_AUTOSAVE_SURVIVAL_RESPAWN
 	#define ENTPATCH_GAME_END
@@ -94,9 +89,11 @@
 	#define ENTPATCH_SETPLAYERAVOIDSTATE
 	#define ENTPATCH_NPC_SLEEP
 	#define ENTPATCH_NPC_THINK_LOCALPLAYER
+	#define ENTPATCH_NPC_ALWAYS_TRANSMIT
 	#define ENTPATCH_FUNC_TRACKAUTOCHANGE
 	#define ENTPATCH_FUNC_TRACKTRAIN
 	#define ENTPATCH_NPC_RUNTASK
+	#define ENTPATCH_BARNACLE_PREDICTION
 	#define ENTPATCH_BM_XENTURRET
 	#define ENTPATCH_BM_ICHTHYOSAUR
 	#define ENTPATCH_BM_GARGANTUA
@@ -109,6 +106,7 @@
 	#define ENTPATCH_BM_SNARK_NEST
 	#define ENTPATCH_BM_SP_WEAPONS
 	#define ENTPATCH_BM_DISSOLVE
+	#define ENTPATCH_BM_XENPORTAL_PUSH_PLAYERS
 
 	#define PLAYERPATCH_SUIT_SOUNDS
 	#define PLAYERPATCH_PICKUP_FORCEPLAYERTODROPTHISOBJECT
@@ -117,6 +115,7 @@
 	#define PLAYERPATCH_OVERRIDE_DEATH_OBSMODE
 	#define PLAYERPATCH_FINDLADDER
 	#define PLAYERPATCH_HITREG
+	#define PLAYERPATCH_BM_CLIENT_PREDICTION
 
 	#define GAMEPATCH_UTIL_GETLOCALPLAYER
 	#define GAMEPATCH_IS_MULTIPLAYER
@@ -127,7 +126,7 @@
 	#define GAMEPATCH_TEAMSELECT_UI
 	#define GAMEPATCH_PREDICTED_EFFECTS
 	#define GAMEPATCH_BM_GRAVITY
-	#define GAMEPATCH_UTIL_FINDCLIENTINPVSGUTS
+	#define GAMEPATCH_UTIL_FINDCLIENT
 
 #endif // SRCCOOP_BLACKMESA
 
@@ -138,27 +137,19 @@
 // Includes
 //------------------------------------------------------
 
-
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <regex>
 #include <dhooks>
 #include <topmenus>
-#include <sourcescramble>
 
+#include <sourcescramble>
 #include <logdebug>
 
-#include <srccoop/util/assert>
 #include <srccoop/typedef>
-#include <srccoop/typedef_game>
 #include <srccoop/public>
-#include <srccoop/classdef>
-#if defined SRCCOOP_BLACKMESA
-#include <srccoop/blackmesa/typedef>
-#include <srccoop/blackmesa/classdef>
-#endif
-#include <srccoop/utils>
+#include <srccoop_api>
 #include <srccoop/config>
 #include <srccoop/features>
 #include <srccoop/globals>
@@ -169,9 +160,9 @@
 #include <srccoop/manager_persistence>
 #include <srccoop/entitypatch>
 #if defined SRCCOOP_BLACKMESA
-#include <srccoop/blackmesa/entitypatch>
-#include <srccoop/blackmesa/deathnotice>
-#include <srccoop/blackmesa/idle_anims>
+#include <srccoop/bms/entitypatch>
+#include <srccoop/bms/deathnotice>
+#include <srccoop/bms/idle_anims>
 #elseif defined SRCCOOP_HL2DM
 #include <srccoop/hl2dm/deathnotice>
 #endif

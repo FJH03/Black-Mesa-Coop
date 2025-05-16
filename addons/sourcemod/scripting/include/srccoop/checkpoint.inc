@@ -1,8 +1,3 @@
-#if defined _srccoop_checkpoint_included
- #endinput
-#endif
-#define _srccoop_checkpoint_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -30,7 +25,7 @@ enum struct CCoopPortal
 			this.m_pParticle.Spawn();
 			this.m_pParticle.Activate();
 			this.m_pParticle.SetSolidType(SOLID_BBOX);
-			this.m_pParticle.SetSolidFlags(FSOLID_TRIGGER);
+			this.m_pParticle.m_usSolidFlags = FSOLID_TRIGGER;
 			this.m_pParticle.SetCollisionGroup(COLLISION_GROUP_DEBRIS_TRIGGER);
 			SDKHook(this.m_pParticle.entindex, SDKHook_StartTouchPost, Hook_TouchPortal);
 			return true;
@@ -397,7 +392,7 @@ enum struct CCoopEquipment
 		for (int i = 0; i < MAX_AMMO_TYPES; i++)
 		{
 			if (this.m_iAmmoCount[i] >= 0)
-				pPlayer.SetAmmoFromIndex(i, this.m_iAmmoCount[i]);
+				pPlayer.SetAmmoFromIndex(view_as<AmmoType_t>(i), this.m_iAmmoCount[i]);
 		}
 
 		if (this.m_szActiveWeapon[0] != '\0')
@@ -455,9 +450,9 @@ enum struct CCoopEquipment
 		}
 		#endif // SRCCOOP_BLACKMESA
 
-		for (int iAmmo = 0; iAmmo < MAX_AMMO_TYPES; iAmmo++)
+		for (int iAmmoType = 0; iAmmoType < MAX_AMMO_TYPES; ++iAmmoType)
 		{
-			this.m_iAmmoCount[iAmmo] = pPlayer.GetAmmoFromIndex(iAmmo);
+			this.m_iAmmoCount[iAmmoType] = pPlayer.GetAmmoFromIndex(view_as<AmmoType_t>(iAmmoType));
 		}
 	}
 }
@@ -609,7 +604,7 @@ methodmap CCoopSpawnSystem
 		}
 		if (pCheckpoint.m_pTouchEnt.IsValid())
 		{
-			SDKHook(pCheckpoint.m_pTouchEnt.GetEntIndex(), SDKHook_StartTouchPost, Hook_TouchCheckpoint);
+			SDKHook(pCheckpoint.m_pTouchEnt.entindex, SDKHook_StartTouchPost, Hook_TouchCheckpoint);
 			bHasTrigger = true;
 		}
 		if (pCheckpoint.m_flRadius > 0.0)
@@ -1087,7 +1082,7 @@ public void Hook_OutputCheckpoint(const char[] szName, int iCaller, int iActivat
 public void Hook_TouchCheckpoint(int iEntity, int iOther)
 {
 	CBasePlayer pOther = CBasePlayer(iOther);
-	if (pOther.IsClassPlayer())
+	if (pOther.IsPlayer())
 	{
 		CBaseEntity pTouched = CBaseEntity(iEntity);
 		int iIndex = data.m_iCurrentCheckpoint + 1;
@@ -1142,7 +1137,7 @@ public void Timer_ActivateCheckpoint(Handle pTimer, int iSerial)
 public void Hook_TouchPortal(int iEntity, int iOther)
 {
 	CBasePlayer pOther = CBasePlayer(iOther);
-	if (pOther.IsClassPlayer())
+	if (pOther.IsPlayer())
 	{
 		CCoopSpawnEntry pCheckpoint;
 		if (CCoopSpawnSystem.GetCurrentCheckpoint(pCheckpoint) && pCheckpoint.TeleportPlayer(pOther))

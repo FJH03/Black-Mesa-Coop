@@ -1,8 +1,3 @@
-#if defined _srccoop_manager_persistence_included
- #endinput
-#endif
-#define _srccoop_manager_persistence_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -74,9 +69,9 @@ methodmap EquipmentManager
 	
 	public static bool GetEquipment(CBasePlayer pPlayer, CCoopEquipment equipment)
 	{
-		if (strlen(g_szSteamIds[pPlayer.GetEntIndex()]) > 0)
+		if (strlen(g_szSteamIds[pPlayer.entindex]) > 0)
 		{
-			return EquipmentManager.GetEquipmentSteam(g_szSteamIds[pPlayer.GetEntIndex()], equipment);
+			return EquipmentManager.GetEquipmentSteam(g_szSteamIds[pPlayer.entindex], equipment);
 		}
 		return false;
 	}
@@ -154,9 +149,9 @@ methodmap EquipmentManager
 
 		for (int i = 0; i < MAX_AMMO_TYPES; i++)
 		{
-			char key[8];
-			IntToString(i, key, sizeof(key));
-			equipment.m_iAmmoCount[i] = kv.GetNum(key, 0);	
+			char szKey[MAX_CHARS_INT(MAX_AMMO_TYPES - 1)];
+			IntToString(i, szKey, sizeof(szKey));
+			equipment.m_iAmmoCount[i] = kv.GetNum(szKey, 0);
 		}
 
 		CBasePlayer pTarget = CBasePlayer(iTarget);
@@ -214,9 +209,9 @@ methodmap EquipmentManager
 			kv.JumpToKey("ammo", true);
 			for (int k = 0; k < MAX_AMMO_TYPES; k++)
 			{
-				char key[8];
-				IntToString(k, key, sizeof(key));
-				kv.SetNum(key, equipment.m_iAmmoCount[k]);
+				char szKey[MAX_CHARS_INT(MAX_AMMO_TYPES - 1)];
+				IntToString(k, szKey, sizeof(szKey));
+				kv.SetNum(szKey, equipment.m_iAmmoCount[k]);
 			}
 
 			if (close)

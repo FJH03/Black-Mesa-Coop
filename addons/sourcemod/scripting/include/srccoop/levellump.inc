@@ -1,8 +1,3 @@
-#if defined _srccoop_levellump_included
- #endinput
-#endif
-#define _srccoop_levellump_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -1527,7 +1522,7 @@ public void FixupBrushModelsPost(DataPack pack)
 		pThis.Teleport(vecOrigin);
 		pThis.SetCollisionBounds(vecMins, vecMaxs);
 		pThis.SetSolidType(SOLID_BBOX);
-		pThis.AddEffects(EF_NODRAW);
+		pThis.m_fEffects |= EF_NODRAW;
 	}
 	delete pack;
 }

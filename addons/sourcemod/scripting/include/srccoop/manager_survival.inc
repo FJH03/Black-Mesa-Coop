@@ -1,8 +1,3 @@
-#if defined _srccoop_manager_survival_included
- #endinput
-#endif
-#define _srccoop_manager_survival_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -100,13 +95,13 @@ methodmap SurvivalManager {
 
 	public static bool IsDead(CBasePlayer pPlayer)
 	{
-		int iSteamID = GetSteamAccountID(pPlayer.GetEntIndex(), g_pConvarValidateSteamIds.BoolValue);
+		int iSteamID = GetSteamAccountID(pPlayer.entindex, g_pConvarValidateSteamIds.BoolValue);
 		return data.m_pDeadPlayerIDs.FindValue(iSteamID) != -1;
 	}
 
 	public static void SetDead(CBasePlayer pPlayer, bool bDead)
 	{
-		int iSteamID = GetSteamAccountID(pPlayer.GetEntIndex(), g_pConvarValidateSteamIds.BoolValue);
+		int iSteamID = GetSteamAccountID(pPlayer.entindex, g_pConvarValidateSteamIds.BoolValue);
 		int index = data.m_pDeadPlayerIDs.FindValue(iSteamID);
 
 		if ((index == -1) == bDead)
@@ -131,7 +126,7 @@ methodmap SurvivalManager {
 		{
 			if (!data.m_bRespawning && (!SurvivalManager.CheckSpawnTimeout() || SurvivalManager.IsDead(pPlayer)))
 			{
-				int client = pPlayer.GetEntIndex();
+				int client = pPlayer.entindex;
 				
 				if (!data.m_bSpecInit[client] && data.m_pRestartTimer == null)
 				{
@@ -140,14 +135,14 @@ methodmap SurvivalManager {
 					pPlayer.SetViewEntity(pPlayer);
 					pPlayer.SetObserverMode(OBS_MODE_CHASE);
 					pPlayer.SetMoveType(MOVETYPE_OBSERVER);
-					pPlayer.SetSolidFlags(pPlayer.GetSolidFlags() | FSOLID_NOT_SOLID);
-					pPlayer.AddEffects(EF_NODRAW);
+					pPlayer.m_usSolidFlags |= FSOLID_NOT_SOLID;
+					pPlayer.m_fEffects |= EF_NODRAW;
 					
 					// Show spectate gui
 					ShowVGUIPanel(client, "specgui", null);
 					
 					// Remove previous fades
-					Client_ScreenFade(client, 1500, FFADE_IN|FFADE_PURGE, 1, 0, 0, 0, 255);
+					pPlayer.ScreenFade(1500, RGBA(0, 0, 0, 255), FFADE_IN | FFADE_PURGE, 1);
 					
 					SetHudTextParams(0.016, 0.04, 5.0, 255, 255, 255, 255, 1, 1.0, 1.0, 1.0);
 					if (SurvivalManager.GetRespawnAtCheckpoints() && CCoopSpawnSystem.CountCheckpoints(true, true))
@@ -166,11 +161,11 @@ methodmap SurvivalManager {
 		return true;
 	}
 	
-	public static void OnPlayerChangeTeam(CBasePlayer pPlayer, int iTeamNum)
+	public static void OnPlayerChangeTeam(const CBasePlayer pPlayer, const int iTeam)
 	{
 		if (SurvivalManager.GetMode())
 		{
-			data.m_bSpecInit[pPlayer.GetEntIndex()] = false;
+			data.m_bSpecInit[pPlayer.entindex] = false;
 			SurvivalManager.GameOverCheck();
 		}
 	}
@@ -179,7 +174,7 @@ methodmap SurvivalManager {
 	{
 		if (SurvivalManager.GetMode())
 		{
-			data.m_bSpecInit[pPlayer.GetEntIndex()] = false;
+			data.m_bSpecInit[pPlayer.entindex] = false;
 			SurvivalManager.SetDead(pPlayer, true);
 			SurvivalManager.GameOverCheck();
 		}
@@ -298,7 +293,9 @@ methodmap SurvivalManager {
 			{
 				CBasePlayer pPlayer = CBasePlayer(i);
 				if (pPlayer.GetTeam() != TEAM_SPECTATOR)
-					Client_ScreenFade(i, 1000, FFADE_OUT|FFADE_STAYOUT, _, 0, 0, 0, 255);
+				{
+					pPlayer.ScreenFade(1000, RGBA(0, 0, 0, 255), FFADE_OUT | FFADE_STAYOUT);
+				}
 				
 				#if defined SRCCOOP_BLACKMESA
 				if (!IsTranslatedForLanguage("survival game over", GetClientLanguage(i)))

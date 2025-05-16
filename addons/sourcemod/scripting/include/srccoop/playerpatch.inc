@@ -1,17 +1,17 @@
-#if defined _srccoop_playerpatch_included
- #endinput
-#endif
-#define _srccoop_playerpatch_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
 static float g_vec3PlayerShootPosition[MAXPLAYERS + 1][3];
+static float g_flPlayerMaxSpeed[MAXPLAYERS + 1];
+
+#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+static bool g_bSetJumpModuleActive[MAXPLAYERS + 1];
+#endif
 
 //------------------------------------------------------
 // Allow flashlight
 //------------------------------------------------------
-public MRESReturn Hook_FAllowFlashlight(Handle hReturn, Handle hParams)
+public MRESReturn Hook_FAllowFlashlight(DHookReturn hReturn, DHookParam hParams)
 {
 	DHookSetReturn(hReturn, mp_flashlight.BoolValue);
 	return MRES_Supercede;
@@ -40,10 +40,13 @@ public void Hook_PlayerPreThink(int iClient)
 	if (!CoopManager.IsCoopModeEnabled())
 		return;
 	
-	if (IsPlayerAlive(iClient))
+	CBasePlayer pPlayer = CBasePlayer(iClient);
+	if (pPlayer.IsAlive())
 	{
 		g_bIsMultiplayerOverride = false;
 	}
+
+	g_flPlayerMaxSpeed[iClient] = pPlayer.GetMaxSpeed();
 }
 
 public void Hook_PlayerPreThinkPost(int iClient)
@@ -59,14 +62,54 @@ public void Hook_PlayerPreThinkPost(int iClient)
 	CBasePlayer pPlayer = CBasePlayer(iClient);
 	if (pPlayer.IsAlive())
 	{
+		#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+		CBlackMesaPlayer pBlackMesaPlayer = view_as<CBlackMesaPlayer>(pPlayer);
+
+		if (!sv_always_run.BoolValue)	// If `sv_always_run` is set to `true`, then client prediction is working as intended.
+		{
+			// In multiplayer, max speed on both the client and the server is set when `IN_SPEED` is held.
+			// While in singleplayer, it is set when `IN_SPEED` is held and the player is holding any directional movement key.
+			bool bIsPressingSprint = pBlackMesaPlayer.IsPressingButton(IN_SPEED);
+			bool bIsDucked = pBlackMesaPlayer.IsDucked();
+			if (bIsPressingSprint && (!bIsDucked || (bIsDucked && g_flPlayerMaxSpeed[iClient] == 320.0)))
+			{
+				pBlackMesaPlayer.SetMaxSpeed(320.0);		// Controlled by `sv_speed_sprint` in game code.
+			}
+			else
+			{
+				pBlackMesaPlayer.SetMaxSpeed(190.0);		// Controlled by `sv_speed_mp` since `sv_speed_walk` is set to `0` only on the client.
+			}
+		}
+
+		// Manually re-enable the jump module.
+		// This introduces one rare client prediction bug where the client can jump multiple times without
+		// enough mana but this only happens if the client has extremely high ping.
+		if (pBlackMesaPlayer.GetJumpModuleMana() < sv_long_jump_manacost.FloatValue)
+		{
+			if (g_bSetJumpModuleActive[iClient])
+			{
+        		pBlackMesaPlayer.SendConVarValueInt(sv_jump_long_enabled, false);
+				g_bSetJumpModuleActive[iClient] = false;
+			}
+		}
+		else
+		{
+			if (!g_bSetJumpModuleActive[iClient])
+			{
+        		pBlackMesaPlayer.SendConVarValueInt(sv_jump_long_enabled, sv_jump_long_enabled.BoolValue);
+				g_bSetJumpModuleActive[iClient] = true;
+			}
+		}
+		#endif
+		
 		#if defined SRCCOOP_BLACKMESA
 		CBaseCombatWeapon pWeapon = pPlayer.GetActiveWeapon();
-		if (pWeapon.IsValid())
+		if (pWeapon != NULL_CBASEENTITY)
 		{
 			if (pPlayer.IsCarryingObject())
 			{
 				// fix clientside prediction errors when dropping objects
-				PreventWeaponFiring(pWeapon, 1.0);
+				pWeapon.DelayNextAttack(1.0);
 			}
 			else if (pPlayer.GetWaterLevel() == WL_Eyes)
 			{
@@ -74,13 +117,13 @@ public void Hook_PlayerPreThinkPost(int iClient)
 				CBaseEntity pParent = pPlayer.GetParent();
 				if (pParent.IsValid())
 				{
-					if (HasEntProp(pParent.GetEntIndex(), Prop_Data, "m_hPrey"))
+					if (HasEntProp(pParent.entindex, Prop_Data, "m_hPrey"))
 					{
-						if (GetEntPropEnt(pParent.GetEntIndex(), Prop_Data, "m_hPrey") == pPlayer.GetEntIndex())
+						if (GetEntPropEnt(pParent.entindex, Prop_Data, "m_hPrey") == pPlayer.entindex)
 						{
 							if (!pWeapon.CanFireUnderwater() && pWeapon.GetPrimaryAmmoType() != -1)
 							{
-								PreventWeaponFiring(pWeapon, 0.2);
+								pWeapon.DelayNextAttack(0.2);
 							}
 						}
 					}
@@ -174,7 +217,7 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 
 		// Make sure target is not an info_observer_menu
 		// force free-look where appropriate - this removes the extra (pointless) third person spec mode
-		if (iObsMode == OBS_MODE_POI && pTarget != pClient && (!pTarget.IsValid() || pTarget.IsClassPlayer()))
+		if (iObsMode == OBS_MODE_POI && pTarget != pClient && (!pTarget.IsValid() || pTarget.IsPlayer()))
 		{
 			SetEntProp(iClient, Prop_Data, "m_iObserverMode", OBS_MODE_ROAMING);
 		}
@@ -244,38 +287,56 @@ public Action PlayerCommandListener(int client, const char[] command, int argc)
 char szLastSuitSound[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 #endif
 
-public Action PlayerSoundListener(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+public Action PlayerSoundListener(int iClients[MAXPLAYERS], int& iNumClients, char szSample[PLATFORM_MAX_PATH], int& iEntIndex, int& iChannel, float& flVolume, int& iLevel, int& iPitch, int& iFlags, char szSoundEntry[PLATFORM_MAX_PATH], int& iSeed)
 {
 	#if defined PLAYERPATCH_SUIT_SOUNDS
-	if (strncmp(sample, "!HEV_", 5) == 0)
+	if (strncmp(szSample, "!HEV_", 5) == 0)
 	{
 		// Here we save last played HEV sound so we can stop it on respawn
-		for (int i = 0; i < numClients; i++)
+		for (int i = 0; i < iNumClients; i++)
 		{
-			szLastSuitSound[clients[i]] = sample;
+			szLastSuitSound[iClients[i]] = szSample;
 		}
 	}
 	#endif
 
-	#if defined SRCCOOP_BLACKMESA
-	if (strncmp(sample, "physics\\footsteps\\", 18) == 0 || strncmp(sample, "player/suit_sprint.wav", 22) == 0)
+	#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+	CBaseEntity pEntity = CBaseEntity(iEntIndex);
+
+	if (pEntity != NULL_CBASEENTITY && pEntity.IsPlayer())
 	{
-		// Footsteps are emitted on the server but not sent to client, because the client usually plays them on its own - but not when sprinting in MP mode (actually just pressing +speed!)
-		// We can resolve this by sending the footsteps, which are already generated on the server, to the client.
-		CBasePlayer pPlayer = CBasePlayer(entity);
-		if (pPlayer.IsValid() && pPlayer.GetButtons() & IN_SPEED)
+		CBasePlayer pPlayer = view_as<CBasePlayer>(pEntity);
+
+		if (strncmp(szSample, "physics\\footsteps\\", 18) == 0 || strncmp(szSample, "player/suit_sprint.wav", 22) == 0)
 		{
-			clients[0] = entity;
-			numClients = 1;
-			return Plugin_Changed;
+			// Jump and land sounds are already predicted on the client so they need to be removed.
+			if (StrContains(szSample, "_jump") != -1 || StrContains(szSample, "_land") != -1)
+			{
+				return RemovePlayerFromSoundListener(iEntIndex, iClients, iNumClients) ? Plugin_Changed : Plugin_Continue;
+			}
+
+			// Footsteps are emitted on the server but not sent to client, because the client usually plays them on its own - but not when sprinting in MP mode (actually just pressing +speed!)
+			// We can resolve this by sending the footsteps, which are already generated on the server, to the client.
+			if (!pPlayer.IsDucked() && (pPlayer.GetButtons() & IN_SPEED))
+			{
+				iClients[0] = iEntIndex;
+				iNumClients = 1;
+				return Plugin_Changed;
+			}
+		}
+		
+		// The jump module sound in Black Mesa plays twice as the sound is already predicted so it needs to be removed.
+		if (strcmp(szSample, "weapons/jumpmod/jumpmod_long1.wav") == 0)
+		{
+			return RemovePlayerFromSoundListener(iEntIndex, iClients, iNumClients) ? Plugin_Changed : Plugin_Continue;
 		}
 	}
-	#endif // SRCCOOP_BLACKMESA
+	#endif // PLAYERPATCH_BM_CLIENT_PREDICTION
 
 	return Plugin_Continue;
 }
 
-public MRESReturn Hook_SetSuitUpdate(int _this, Handle hParams)
+public MRESReturn Hook_SetSuitUpdate(int _this, DHookParam hParams)
 {
 	if (CoopManager.IsFeatureEnabled(FT_HEV_SOUNDS))
 	{
@@ -284,7 +345,7 @@ public MRESReturn Hook_SetSuitUpdate(int _this, Handle hParams)
 	return MRES_Ignored;
 }
 
-public MRESReturn Hook_SetSuitUpdatePost(int _this, Handle hParams)
+public MRESReturn Hook_SetSuitUpdatePost(int _this, DHookParam hParams)
 {
 	g_bIsMultiplayerOverride = true;
 	return MRES_Ignored;
@@ -295,7 +356,7 @@ public MRESReturn Hook_SetSuitUpdatePost(int _this, Handle hParams)
 // Prevent input of kill to player as this will put the player in a hanging state
 // This can occur in some maps where a trigger is set to kill the !activator and the player so happens to be there
 //------------------------------------------------------
-public MRESReturn Hook_PlayerAcceptInput(int _this, Handle hReturn, Handle hParams)
+public MRESReturn Hook_PlayerAcceptInput(int _this, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!DHookIsNullParam(hParams, 1))
 	{
@@ -314,15 +375,19 @@ public MRESReturn Hook_PlayerAcceptInput(int _this, Handle hReturn, Handle hPara
 //------------------------------------------------------
 // ClientPutInServer
 //------------------------------------------------------
-public void PlayerPatch_OnClientPutInServer(int client)
+public void PlayerPatch_OnClientPutInServer(const int iClient)
 {
-	SendClientConvars(client, false);
+	#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+	g_bSetJumpModuleActive[iClient] = false;
+	#endif
+	
+	SendClientConvars(iClient, false);
 }
 
 //------------------------------------------------------
 // Player spawn
 //------------------------------------------------------
-public MRESReturn Hook_PlayerSpawn(int _this, Handle hReturn, Handle hParams)
+public MRESReturn Hook_PlayerSpawn(int _this, DHookReturn hReturn, DHookParam hParams)
 {
 	if (CoopManager.IsCoopModeEnabled())
 	{
@@ -343,7 +408,7 @@ public MRESReturn Hook_PlayerSpawn(int _this, Handle hReturn, Handle hParams)
 //------------------------------------------------------
 // Player spawn post
 //------------------------------------------------------
-public MRESReturn Hook_PlayerSpawnPost(int iClient, Handle hReturn, Handle hParams)
+public MRESReturn Hook_PlayerSpawnPost(int iClient, DHookReturn hReturn, DHookParam hParams)
 {
 	if (!CoopManager.IsCoopModeEnabled())
 		return MRES_Ignored;
@@ -353,80 +418,83 @@ public MRESReturn Hook_PlayerSpawnPost(int iClient, Handle hReturn, Handle hPara
 		return MRES_Ignored;
 	
 	CBasePlayer pPlayer = CBasePlayer(iClient);
-	if (pPlayer.IsValid())
+	if (pPlayer.IsAlive())
 	{
-		if (pPlayer.IsAlive())
+		ClearNpcMemoryForPlayer(pPlayer);
+		
+		// Ensure death camera and ragdoll get removed
+		CBaseEntity pRagdoll = pPlayer.GetRagdoll();
+		if (pRagdoll != NULL_CBASEENTITY)
 		{
-			// Ensure death camera and ragdoll get removed
-			CBaseEntity pRagdoll = pPlayer.GetRagdoll();
-			if (pRagdoll.IsValid())
-			{
-				pRagdoll.Kill();
-			}
-
-			// Ensure view entity is player and observer mode is off
-			// Set before spawnsystem SpawnPlayer in case view entitiy is changed there
-			pPlayer.SetViewEntity(pPlayer);
-			pPlayer.SetObserverMode(OBS_MODE_NONE);
-
-			// Fix for if player died on a ladder
-			SetEntPropEnt(pPlayer.GetEntIndex(), Prop_Data, "m_hLadder", -1);
-
-			// Apply on-spawn convars
-			SendClientConvars(iClient, true);
-
-			// Correct the 'damages' from the prethink hook hack
-			#if defined SRCCOOP_BLACKMESA
-			pPlayer.SetSuit(false);
-			pPlayer.SetMaxSpeed(190.0);
-			pPlayer.SetIsSprinting(false);
-			pPlayer.SetSolidFlags(pPlayer.GetSolidFlags() & ~FSOLID_NOT_SOLID);
-			#endif
-
-			// Stop HEV sounds
-			#if defined PLAYERPATCH_SUIT_SOUNDS
-			pPlayer.ClearSuitQueue();
-			StopSound(iClient, SNDCHAN_STATIC, szLastSuitSound[iClient]);
-			#endif
-
-			CoopManager.OnPlayerSpawned(pPlayer);
+			pRagdoll.Kill();
 		}
-		else // Not alive => entered the game
+
+		// Ensure view entity is player and observer mode is off
+		// Set before spawnsystem SpawnPlayer in case view entity is changed there
+		pPlayer.SetViewEntity(pPlayer);
+		pPlayer.SetObserverMode(OBS_MODE_NONE);
+
+		// Fix for if player died on a ladder
+		pPlayer.SetLadder(NULL_CBASEENTITY);
+
+		// Apply on-spawn convars
+		SendClientConvars(iClient, true);
+
+		// Correct the 'damages' from the prethink hook hack
+		#if defined SRCCOOP_BLACKMESA
+		pPlayer.SetSuit(false);
+		pPlayer.SetIsSprinting(false);
+		pPlayer.m_usSolidFlags &= ~FSOLID_NOT_SOLID;
+		#endif
+		
+		#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+		// Fixes client prediction on the jump module HUD and the first initial jump with full mana.
+        pPlayer.SendConVarValueInt(sv_long_jump_manacost, 0);
+		#endif
+
+		// Stop HEV sounds
+		#if defined PLAYERPATCH_SUIT_SOUNDS
+		pPlayer.ClearSuitQueue();
+		pPlayer.StopSound(SNDCHAN_STATIC, szLastSuitSound[iClient]);
+		#endif
+
+		CoopManager.OnPlayerSpawned(pPlayer);
+	}
+	else // Not alive => entered the game
+	{
+		// Set initial view
+		CCoopSpawnSystem.TeleportPlayerOnSpawn(pPlayer);
+
+		// Initialize clientside convars from skill.cfg, which may have not executed.
+		#if defined SRCCOOP_BLACKMESA
+		pPlayer.QueryConvar("r_bloomtintexponent_nextgen", QueryConVar_Bloom, 2.2);
+		pPlayer.QueryConvar("r_bloomtintr_nextgen", QueryConVar_Bloom, 0.25);
+		pPlayer.QueryConvar("r_bloomtintg_nextgen", QueryConVar_Bloom, 0.25);
+		pPlayer.QueryConvar("r_bloomtintb_nextgen", QueryConVar_Bloom, 0.25);
+		pPlayer.QueryConvar("gb_flashlight_intensity", QueryConVar_Bloom, 0.8);
+		#endif
+		
+		#if defined GAMEPATCH_TEAMSELECT_UI
+
+		if (pPlayer.GetTeam() == TEAM_SPECTATOR)
 		{
-			// Set initial view
-			CCoopSpawnSystem.TeleportPlayerOnSpawn(pPlayer);
-
-			// Initialize clientside convars from skill.cfg, which may have not executed.
-			#if defined SRCCOOP_BLACKMESA
-			QueryClientConVar(iClient, "r_bloomtintexponent_nextgen", QueryConVar_Bloom, 2.2);
-			QueryClientConVar(iClient, "r_bloomtintr_nextgen", QueryConVar_Bloom, 0.25);
-			QueryClientConVar(iClient, "r_bloomtintg_nextgen", QueryConVar_Bloom, 0.25);
-			QueryClientConVar(iClient, "r_bloomtintb_nextgen", QueryConVar_Bloom, 0.25);
-			QueryClientConVar(iClient, "gb_flashlight_intensity", QueryConVar_Bloom, 0.8);
-			#endif
-			
-			#if defined GAMEPATCH_TEAMSELECT_UI
-
-			if (GetClientTeam(iClient) == TEAM_SPECTATOR)
+			if (g_pConvarDisableTeamSelect.BoolValue)
 			{
-				if (g_pConvarDisableTeamSelect.BoolValue)
-				{
-					// Hide team select
-					ClientCommand(iClient, "hidepanel team");
-					ClientCommand(iClient, "hidepanel deathmatch");
-					ChangeClientTeam(iClient, TEAM_SCIENTIST);
-					g_bPostTeamSelect[iClient] = true;
-				}
-				else
-				{
-					// Always show DM variant of team select
-					ClientCommand(iClient, "hidepanel team");
-					ClientCommand(iClient, "showpanel deathmatch");
-				}
+				// Hide team select
+				pPlayer.SendCommand("hidepanel team");
+				pPlayer.SendCommand("hidepanel deathmatch");
+				pPlayer.SetTeam(TEAM_TWO);
+				g_bPostTeamSelect[iClient] = true;
 			}
-
-			#endif // GAMEPATCH_TEAMSELECT_UI
+			else
+			{
+				// Always show DM variant of team select
+				pPlayer.SendCommand("hidepanel team");
+				pPlayer.SendCommand("showpanel deathmatch");
+			}
 		}
+
+		#endif // GAMEPATCH_TEAMSELECT_UI
 	}
 	return MRES_Ignored;
 }
@@ -460,10 +528,11 @@ public MRESReturn Hook_PlayerKilledPost(int _this, DHookParam hParams)
 		return MRES_Ignored;
 
 	CBasePlayer pPlayer = CBasePlayer(_this);
+	ClearNpcMemoryForPlayer(pPlayer);
 
 	#if defined PLAYERPATCH_SERVERSIDE_RAGDOLLS
-	Address pTakeDmgInfo = hParams.GetAddress(1);
-	PlayerPatch_ApplyServerRagdoll(pPlayer, pTakeDmgInfo);
+	CTakeDamageInfo pTakeDamageInfo = CTakeDamageInfo.FromAddress(hParams.GetAddress(1));
+	PlayerPatch_ApplyServerRagdoll(pPlayer, pTakeDamageInfo);
 	#endif
 	
 	SurvivalManager.OnPlayerDeath(pPlayer);
@@ -473,16 +542,16 @@ public MRESReturn Hook_PlayerKilledPost(int _this, DHookParam hParams)
 
 #if defined PLAYERPATCH_SERVERSIDE_RAGDOLLS
 
-void PlayerPatch_ApplyServerRagdoll(CBasePlayer pPlayer, Address pTakeDmgInfo)
+void PlayerPatch_ApplyServerRagdoll(const CBasePlayer pPlayer, const CTakeDamageInfo pTakeDamageInfo)
 {
-	int iDmgType = LoadFromAddress(pTakeDmgInfo + view_as<Address>(60), NumberType_Int32);
-	if (iDmgType & DMG_DISSOLVE)
+	int iDamageType = pTakeDamageInfo.GetDamageType();
+	if (iDamageType & DMG_DISSOLVE)
 	{
 		// dont bother
 		return;
 	}
 
-	CBaseAnimating pRagdoll = pPlayer.GetRagdoll();
+	CBaseEntity pRagdoll = pPlayer.GetRagdoll();
 	if (pRagdoll != NULL_CBASEENTITY)
 	{
 		pRagdoll.Kill();
@@ -494,28 +563,26 @@ void PlayerPatch_ApplyServerRagdoll(CBasePlayer pPlayer, Address pTakeDmgInfo)
 		return;
 	}
 	
+	CBaseAnimating pSourceEntity = pPlayer;
+	
 	#if defined SRCCOOP_BLACKMESA
-	int iRagdollInheritIndex;
-	if (g_pIdle[pPlayer.GetEntIndex()].m_pModel.IsValid())
+	if (g_pIdle[pPlayer.entindex].m_pModel.IsValid())
 	{
 		// Player is currently using model for idle animations.
 		// The nodraw is required for hiding the player the tick he dies.
 		// The model that was parented is cleared since `CreateServerRagdoll` will not work otherwise.
-		pPlayer.AddEffects(EF_NODRAW);
-		g_pIdle[pPlayer.GetEntIndex()].m_pModel.ClearParent();
-		iRagdollInheritIndex = g_pIdle[pPlayer.GetEntIndex()].m_pModel.GetEntIndex();
+		pPlayer.m_fEffects |= EF_NODRAW;
+		g_pIdle[pPlayer.entindex].m_pModel.ClearParent();
+		pSourceEntity = g_pIdle[pPlayer.entindex].m_pModel;
 	}
 	else
 	{
-		pPlayer.RemoveEffects(EF_NODRAW);
-		iRagdollInheritIndex = pPlayer.GetEntIndex();
+		pSourceEntity.m_fEffects &= ~EF_NODRAW;
 	}
-	#else
-	int iRagdollInheritIndex = pPlayer.GetEntIndex();
 	#endif
-	
-	pRagdoll = CBaseAnimating(SDKCall(g_pCreateServerRagdoll, iRagdollInheritIndex, pPlayer.GetForceBone(), pTakeDmgInfo, COLLISION_GROUP_DEBRIS_TRIGGER, false));
-	if (pRagdoll.IsValid())
+
+	pRagdoll = CreateServerRagdoll(pSourceEntity, pPlayer.GetForceBone(), pTakeDamageInfo, COLLISION_GROUP_DEBRIS_TRIGGER, false);
+	if (pRagdoll != NULL_CBASEENTITY)
 	{
 		SDKHook(pRagdoll.entindex, SDKHook_OnTakeDamage, Hook_NoDmg);
 
@@ -574,7 +641,7 @@ public Action Hook_PlayerTraceAttack(int victim, int &attacker, int &inflictor, 
 	if (CoopManager.IsCoopModeEnabled() && !mp_friendlyfire.BoolValue)
 	{
 		// Disable FF
-		if (attacker != victim && CBasePlayer(attacker).IsClassPlayer())
+		if (attacker != victim && CBasePlayer(attacker).IsPlayer())
 		{
 			return Plugin_Handled;
 		}
@@ -593,7 +660,7 @@ public Action Hook_PlayerTakeDamage(int victim, int &attacker, int &inflictor, f
 	if (!mp_friendlyfire.BoolValue)
 	{
 		// Disable FF from other sources such as the tau cannon
-		if (attacker != victim && CBasePlayer(attacker).IsClassPlayer())
+		if (attacker != victim && CBasePlayer(attacker).IsPlayer())
 		{
 			return Plugin_Handled;
 		}
@@ -617,7 +684,7 @@ public Action Hook_PlayerTakeDamage(int victim, int &attacker, int &inflictor, f
 
 // Fixes hit registration being off by 1 tick.
 // Credits to Xutax_Kamay (https://forums.alliedmods.net/showthread.php?t=315405)
-public MRESReturn Hook_PlayerWeaponShootPosition_Post(int iClient, Handle hReturn)
+public MRESReturn Hook_PlayerWeaponShootPosition_Post(int iClient, DHookReturn hReturn)
 {
 	CBasePlayer pPlayer = CBasePlayer(iClient);
 	// Objects that are carried will call this hook and lag further behind the desired position.
@@ -632,7 +699,7 @@ public MRESReturn Hook_PlayerWeaponShootPosition_Post(int iClient, Handle hRetur
 // Player team change hooks
 // - Force everyone to single team in TDM
 //------------------------------------------------------
-public MRESReturn Hook_PlayerChangeTeam(int iClient, Handle hParams)
+public MRESReturn Hook_PlayerChangeTeam(int iClient, DHookParam hParams)
 {
 	if (CoopManager.IsCoopModeEnabled() && iClient != -1)
 	{
@@ -642,23 +709,19 @@ public MRESReturn Hook_PlayerChangeTeam(int iClient, Handle hParams)
 		if (!CMultiplayRules.IsTeamplay())
 			return MRES_Ignored;
 		
-		int iTeamNum = DHookGetParam(hParams, 1);
-		if (iTeamNum == TEAM_SCIENTIST || iTeamNum == TEAM_MARINES || iTeamNum == TEAM_UNASSIGNED)
+		int iTeam = hParams.Get(1);
+		if (iTeam == TEAM_UNASSIGNED || iTeam > TEAM_SPECTATOR)
 		{
-			char szTeam[16]; g_pConvarCoopTeam.GetString(szTeam, sizeof(szTeam));
-			if (StrEqual(szTeam, "scientist", false) || StrEqual(szTeam, "3"))
+			int iEnforcedTeam = CoopManager.GetEnforcedTeam();
+			if (iEnforcedTeam != TEAM_INVALID)
 			{
-				DHookSetParam(hParams, 1, TEAM_SCIENTIST);
+				hParams.Set(1, iEnforcedTeam);
 				return MRES_ChangedHandled;
 			}
-			else if (StrEqual(szTeam, "marines", false) || StrEqual(szTeam, "2"))
+			
+			if (iTeam == TEAM_UNASSIGNED)
 			{
-				DHookSetParam(hParams, 1, TEAM_MARINES);
-				return MRES_ChangedHandled;
-			}
-			if (iTeamNum == TEAM_UNASSIGNED)
-			{
-				DHookSetParam(hParams, 1, TEAM_SCIENTIST);
+				hParams.Set(1, TEAM_TWO);
 				return MRES_ChangedHandled;
 			}
 		}
@@ -666,22 +729,23 @@ public MRESReturn Hook_PlayerChangeTeam(int iClient, Handle hParams)
 	return MRES_Ignored;
 }
 
-public MRESReturn Hook_PlayerChangeTeamPost(int iClient, Handle hParams)
+public MRESReturn Hook_PlayerChangeTeamPost(int iClient, DHookParam hParams)
 {
 	if (CoopManager.IsCoopModeEnabled())
 	{
 		CBasePlayer pPlayer = CBasePlayer(iClient);
-		int iTeamNum = DHookGetParam(hParams, 1);
-		if (iTeamNum == TEAM_SPECTATOR)
+		int iTeam = DHookGetParam(hParams, 1);
+		if (iTeam == TEAM_SPECTATOR)
 		{
 			CBaseEntity pRagdoll = pPlayer.GetRagdoll();
-			if (pRagdoll.IsValid())
+			if (pRagdoll != NULL_CBASEENTITY)
 			{
 				pRagdoll.Kill();
 			}
+			ClearNpcMemoryForPlayer(pPlayer);
 		}
 
-		SurvivalManager.OnPlayerChangeTeam(pPlayer, iTeamNum);
+		SurvivalManager.OnPlayerChangeTeam(pPlayer, iTeam);
 	}
 	return MRES_Ignored;
 }
@@ -689,12 +753,12 @@ public MRESReturn Hook_PlayerChangeTeamPost(int iClient, Handle hParams)
 //------------------------------------------------------
 // NoBlock
 //------------------------------------------------------
-public MRESReturn Hook_PlayerShouldCollide(int _this, Handle hReturn, Handle hParams)
+public MRESReturn Hook_PlayerShouldCollide(int _this, DHookReturn hReturn, DHookParam hParams)
 {
 	if (CoopManager.IsFeatureEnabled(FT_NOBLOCK))
 	{
-		int iCollisionGroup = DHookGetParam(hParams, 1);
-		if (iCollisionGroup == COLLISION_GROUP_PLAYER || iCollisionGroup == COLLISION_GROUP_PLAYER_MOVEMENT)
+		Collision_Group_t eCollisionGroup = DHookGetParam(hParams, 1);
+		if (eCollisionGroup == COLLISION_GROUP_PLAYER || eCollisionGroup == COLLISION_GROUP_PLAYER_MOVEMENT)
 		{
 			DHookSetReturn(hReturn, false);
 			return MRES_Supercede;
@@ -707,13 +771,13 @@ public MRESReturn Hook_PlayerShouldCollide(int _this, Handle hReturn, Handle hPa
 // Pickup_ForcePlayerToDropThisObject
 // reconstructed to avoid crash on UTIL_GetLocalPlayer nullptr
 //------------------------------------------------------
-public MRESReturn Hook_ForcePlayerToDropThisObject(Handle hParams)
+public MRESReturn Hook_ForcePlayerToDropThisObject(DHookParam hParams)
 {
 	if (!DHookIsNullParam(hParams, 1))
 	{
 		// singleplayer doesn't care what's passed in so we have to check for both player or item
 		CBaseEntity pParam = CBaseEntity(DHookGetParam(hParams, 1));
-		if (pParam.IsClassPlayer())
+		if (pParam.IsPlayer())
 		{
 			view_as<CBasePlayer>(pParam).ForceDropOfCarriedPhysObjects();
 		}
@@ -806,14 +870,14 @@ public void Movement_FindLadder(CBasePlayer pPlayer)
 			continue;
 		
 		// Finally the traces that need to be overridden to ignore players in the way...
-		CTraceRay pTraceRay = new CTraceRay(vecPlayerOrigin, closest, MASK_PLAYERSOLID, RayType_EndPoint, TraceEntityFilter_IgnorePlayers, -1);
+		CTraceRay pTraceRay = new CTraceRay(vecPlayerOrigin, closest, MASK_PLAYERSOLID, RayType_EndPoint, TraceEntityFilter_IgnorePlayers);
 		if (pTraceRay.GetFraction() != 1.0 && pTraceRay.GetEntity() != pLadder)
 		{
 			pTraceRay.Close();
 			
 			AddVectors(vecTmp, vecPlayerOrigin, vecTmp);
 			vecTmp[2] += sizeZ;
-			pTraceRay = new CTraceRay(vecTmp, closest, MASK_PLAYERSOLID, RayType_EndPoint, TraceEntityFilter_IgnorePlayers, -1);
+			pTraceRay = new CTraceRay(vecTmp, closest, MASK_PLAYERSOLID, RayType_EndPoint, TraceEntityFilter_IgnorePlayers);
 			if (pTraceRay.GetFraction() != 1.0 && pTraceRay.GetEntity() != pLadder)
 			{
 				pTraceRay.Close();
@@ -851,14 +915,14 @@ CCoopEquipment g_pPackedEquipment[MAXPLAYERS + 1];
 
 bool HasPackedItems(CBasePlayer pPlayer)
 {
-	return g_pPackedEquipment[pPlayer.GetEntIndex()].IsInitialized();
+	return g_pPackedEquipment[pPlayer.entindex].IsInitialized();
 }
 
 void PackPlayerItems(CBasePlayer pPlayer)
 {
 	ClearPackedItems(pPlayer);
 	
-	int client = pPlayer.GetEntIndex();
+	int client = pPlayer.entindex;
 	g_pPackedEquipment[client].Initialize(true);
 	g_pPackedEquipment[client].Fill(pPlayer);
 	
@@ -868,15 +932,15 @@ void PackPlayerItems(CBasePlayer pPlayer)
 		CBaseCombatWeapon pWeapon = g_pPackedEquipment[client].m_pWeaponEntityList.Get(i);
 		pPlayer.RemoveWeapon(pWeapon);
 		pWeapon.SetModelIndex(pWeapon.GetWeaponModelIndex(.bViewModel = false));
-		pWeapon.SetSpawnFlags(pWeapon.GetSpawnFlags() | SF_ITEM_NORESPAWN);
-		pWeapon.AddEffects(EF_NODRAW | EF_NOSHADOW);
+		pWeapon.m_spawnflags |= SF_ITEM_NORESPAWN;
+		pWeapon.m_fEffects |= EF_NODRAW | EF_NOSHADOW;
 	}
 	pPlayer.RemoveAllItems();
 }
 
 void RestorePackedItems(CBasePlayer pPlayer)
 {
-	int client = pPlayer.GetEntIndex();
+	int client = pPlayer.entindex;
 	if (!g_pPackedEquipment[client].IsInitialized())
 		return;
 
@@ -900,7 +964,7 @@ void RestorePackedItems(CBasePlayer pPlayer)
 
 void ClearPackedItems(CBasePlayer pPlayer)
 {
-	int client = pPlayer.GetEntIndex();
+	int client = pPlayer.entindex;
 	if (!g_pPackedEquipment[client].IsInitialized())
 		return;
 
@@ -1000,4 +1064,69 @@ void QueryConVarSafeSet(QueryCookie cookie, int client, ConVarQueryResult result
 	{
 		LogMessage("Issuing client commands is not allowed. Please remove \"%s\" from client_console in the map's edt file.", cvarName);
 	}
+}
+
+#if defined PLAYERPATCH_BM_CLIENT_PREDICTION
+
+public void SetMovementPredictionConVars()
+{
+	// Client movement prediction fix.
+	// `sv_speed_walk` in MP is used for sprinting (`IN_SPEED`).
+	// If `sv_speed_walk` is set to `0.0`, then `sv_speed_mp` is used instead which is set to `320.0` by default.
+	bool bIsCoop = CoopManager.IsCoopModeEnabled();
+	bool bAlwaysRun = sv_always_run.BoolValue;
+	sv_speed_sprint.FloatValue = (!bIsCoop || bAlwaysRun) ? 320.0 : 190.0;
+	sv_speed_walk.FloatValue = (!bIsCoop || bAlwaysRun) ? 90.0 : 0.0;
+}
+
+public void Hook_ConVar_AlwaysRun(const ConVar hConVar, const char[] szOldValue, const char[] szNewValue)
+{
+	SetMovementPredictionConVars();
+}
+
+#endif // PLAYERPATCH_BM_CLIENT_PREDICTION
+
+// Clears the player out of NPC memories and clears flags.
+//
+static void ClearNpcMemoryForPlayer(const CBasePlayer pPlayer)
+{
+	int iEntIndex = -1;
+	while ((iEntIndex = FindEntityByClassname(iEntIndex, "*")) != -1)
+	{
+		CBaseEntity pEntity = CBaseEntity(iEntIndex);
+		if (pEntity.IsNPC())
+		{
+			#if defined SRCCOOP_BLACKMESA
+			if (pEntity.IsClassname("npc_abrams"))
+			{
+				// causes a crash in CNPC_Abrams::AimMiniTurret2
+				continue;
+			}
+			#endif
+
+			CAI_BaseNPC pNPC = view_as<CAI_BaseNPC>(pEntity);
+			pNPC.ForgetEntity(pPlayer);
+		}
+	}
+
+	pPlayer.m_iEFlags &= ~EFL_IS_BEING_LIFTED_BY_BARNACLE;
+}
+
+// If removing the player index was successful, this function returns `true`, modifies the array and adjusts `iNumClients`.
+//
+stock bool RemovePlayerFromSoundListener(const int iClientIndex, int iClients[MAXPLAYERS], int& iNumClients)
+{
+	for (int i = 0; i < iNumClients; ++i)
+	{
+		if (iClients[i] == iClientIndex)
+		{
+			for (int j = i; j < (iNumClients - 1); ++j)
+			{
+				iClients[j] = iClients[j + 1];
+			}
+			iNumClients -= 1;
+			return true;
+		}
+	}
+	return false;
 }

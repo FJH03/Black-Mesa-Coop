@@ -1,8 +1,3 @@
-#if defined _srccoop_manager_changelevel_included
- #endinput
-#endif
-#define _srccoop_manager_changelevel_included
-
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -114,7 +109,7 @@ methodmap ChangeLevelManager < ArrayList
 
 	public bool SetPlayerVote(CChangelevel pChangelevel, CBasePlayer pPlayer, int[] iClientVoteIndicies)
 	{
-		int iPlayer = pPlayer.GetEntIndex();
+		int iPlayer = pPlayer.entindex;
 		ChangeLevelVoteLump pChangeLvlLump;
 		for (int i = 0; i < this.Length; i++)
 		{

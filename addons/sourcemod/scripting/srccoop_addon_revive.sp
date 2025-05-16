@@ -4,7 +4,7 @@
 
 #define CONF_PREFIX "REVIVE_"
 
-#include <srccoop_api>
+#include <srccoop_addon>
 
 #pragma semicolon 1;
 #pragma newdecls required;
@@ -25,7 +25,7 @@ enum struct ReviveConfig
 	char SND_RESPAWN[PLATFORM_MAX_PATH];
 	int SND_RESPAWN_PITCH;
 	int SNDLEVEL;
-	int BAR_COLOR[4];
+	RGBA BAR_COLOR;
 	char BAR_MODEL[PLATFORM_MAX_PATH];
 	char RAGDOLL_PARTICLE[128];
 
@@ -67,9 +67,7 @@ public void OnPluginStart()
 	LoadTranslations("common.phrases");
 	
 	InitSourceCoopAddon();
-	GameData pConfig = LoadSourceCoopConfig();
-	Conf.Initialize(pConfig);
-	pConfig.Close();
+	Conf.Initialize(LoadSourceCoopConfig());
 	
 	g_pConVarReviveTime = CreateConVar("sourcecoop_revive_time", "4.0", "Sets time that you have to hold E to revive.", _, true, 0.0, false);
 	g_pConVarReviveScore = CreateConVar("sourcecoop_revive_score", "1", "Sets score to give for reviving a player.", _, true, 0.0, false);
@@ -80,8 +78,7 @@ public void OnPluginStart()
 	g_pConvarAllowInClassicMode = CreateConVar("sourcecoop_revive_in_classic_mode", "1", "Whether to allow reviving in non-survival mode.", _, true, 0.0, true, 1.0);
 	g_pConvarAllowInClassicMode.AddChangeHook(OnAllowInClassicModeChanged);
 	
-	RegAdminCmd("sourcecoop_revive", Command_ForceRespawn, ADMFLAG_ROOT, "Force respawn player.");
-	RegAdminCmd("sc_revive", Command_ForceRespawn, ADMFLAG_ROOT, "Force respawn player.");
+	RegAdminCmd("sc_revive", Command_Revive, ADMFLAG_SLAY, "Respawns dead players");
 
 	g_pSpawnOptions.bRevive = true;
 	g_pSpawnOptions.bUnstuck = true;
@@ -127,29 +124,49 @@ void SetEnabledState()
 	{
 		g_bEnabled = false;
 		for (int i = 1; i <= MaxClients; i++)
+		{
 			ResetReviveStatus(i);
+		}
 	}
 }
 
-public Action Command_ForceRespawn(int client, int args)
+public Action Command_Revive(int client, int args)
 {
-	static char szTarget[64];
-	
 	if (!g_bEnabled)
 	{
+		MsgReply(client, "Revive is disabled.");
 		return Plugin_Handled;
 	}
-	if (args < 1)
+	if (args != 1)
 	{
-		MsgReply(client, "You must specify a player to spawn.");
+		MsgReply(client, "Usage: sc_revive <target>");
 		return Plugin_Handled;
 	}
 	
+	char szTarget[65];
 	GetCmdArg(1, szTarget, sizeof(szTarget));
+
+	char szTargetName[MAX_TARGET_LENGTH];
+	int iTargets[MAXPLAYERS], iTargetCount;
+	bool bIsML;
 	
-	int iTarget = FindTarget(client, szTarget, false);
-	if (iTarget > 0)
+	if ((iTargetCount = ProcessTargetString(
+			szTarget,
+			client,
+			iTargets,
+			sizeof(iTargets),
+			COMMAND_FILTER_NO_IMMUNITY|COMMAND_FILTER_DEAD|COMMAND_FILTER_NO_BOTS,
+			szTargetName,
+			sizeof(szTargetName),
+			bIsML)) <= 0)
 	{
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
+
+	for (int i = 0; i < iTargetCount; i++)
+	{
+		int iTarget = iTargets[i];
 		CBasePlayer pTarget = CBasePlayer(iTarget);
 		if (pTarget.GetRagdoll().IsValid())
 		{
@@ -163,9 +180,9 @@ public Action Command_ForceRespawn(int client, int args)
 
 		if (SC_Respawn(pTarget, g_pSpawnOptions))
 		{
-			Client_ScreenFade(iTarget, 512, FFADE_PURGE|FFADE_IN, 1, 0, 0, 200, 255);
+			pTarget.ScreenFade(512, RGBA(0, 0, 200, 255), FFADE_PURGE | FFADE_IN, 1);
 			EmitSoundToClient(iTarget, Conf.SND_RESPAWN, iTarget, SNDCHAN_STATIC, SNDLEVEL_NONE, .pitch = Conf.SND_RESPAWN_PITCH);
-			MsgReply(client, "Spawned '%N'.", iTarget);
+			MsgReply(client, "Respawned '%N'.", iTarget);
 			if (client != iTarget)
 			{
 				Msg(iTarget, "%N respawned you!", client);
@@ -233,10 +250,10 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						if (g_flNextSpriteUpdate[client] <= GetGameTime())
 						{
 							Client_ProgressBar(pPlayer,
+								.color = Conf.BAR_COLOR,
 								.flTime = g_pConVarReviveTime.FloatValue,
 								.flBarLength = 30.0,
 								.flBarWidth = 0.3,
-								.Color = Conf.BAR_COLOR,
 								.flDistFromPlayer = 20.0);
 							
 							g_flNextSpriteUpdate[client] = GetGameTime() + g_pConVarReviveTime.FloatValue;
@@ -249,7 +266,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 
 							if (SC_Respawn(pTarget, g_pSpawnOptions))
 							{
-								Client_ScreenFade(pTarget.entindex, 512, FFADE_PURGE|FFADE_IN, 1, 0, 0, 200, 255);
+								pTarget.ScreenFade(512, RGBA(0, 0, 200, 255), FFADE_PURGE | FFADE_IN, 1);
 								EmitAmbientSound(Conf.SND_RESPAWN, g_pSpawnOptions.vecOrigin, .level = Conf.SNDLEVEL, .pitch = Conf.SND_RESPAWN_PITCH);
 								
 								// Give score to reviver
@@ -278,7 +295,7 @@ public void OnPlayerRunCmdPost(int client, int buttons)
 						
 						if (GetVectorDistance(vecEyeOrigin, vecRagdollPosition, false) < 100.0)
 						{
-							TR_TraceRayFilter(vecEyeOrigin, vecEyeAngles, MASK_SOLID, RayType_Infinite, TraceEntityFilter, client);
+							TR_TraceRayFilter(vecEyeOrigin, vecEyeAngles, MASK_SOLID, RayType_Infinite, TraceEntityFilter_IgnoreData, client);
 							TR_GetEndPosition(vecEyeOrigin);
 							if (GetVectorDistance(vecEyeOrigin, vecRagdollPosition, false) < 100.0)
 							{
@@ -324,16 +341,9 @@ public void OnClientDisconnect_Post(int client)
 	g_pRagdollEffectsTimer[client] = null;
 }
 
-public bool TraceEntityFilter(int entity, int mask, any data)
-{
-	if (entity == data)
-		return false;
-	return true;
-}
-
 public void SC_OnPlayerRagdollCreated(CBasePlayer pPlayer, CBaseAnimating pRagdoll)
 {
-	int client = pPlayer.GetEntIndex();
+	int client = pPlayer.entindex;
 	delete g_pRagdollEffectsTimer[client];
 	if (g_bEnabled)
 	{
@@ -349,12 +359,12 @@ public void Timer_SetRagdollEffects(Handle timer, CBasePlayer pPlayer)
 {
 	if (pPlayer.IsInGame())
 	{
-		g_pRagdollEffectsTimer[pPlayer.GetEntIndex()] = null;
+		g_pRagdollEffectsTimer[pPlayer.entindex] = null;
 		CBaseEntity pRagdoll = pPlayer.GetRagdoll();
 		if (pRagdoll.IsValid())
 		{
 			if (g_pConVarRagdollBlink.BoolValue)
-				pRagdoll.AddEffects(EF_ITEM_BLINK);
+				pRagdoll.m_fEffects |= EF_ITEM_BLINK;
 
 			if (g_pConVarRagdollParticle.BoolValue && Conf.RAGDOLL_PARTICLE[0] != EOS)
 			{
@@ -374,12 +384,12 @@ public void Timer_SetRagdollEffects(Handle timer, CBasePlayer pPlayer)
 //------------------------------------------------------
 // Progress bar rendering
 //------------------------------------------------------
-CBaseEntity g_pProgressBar[MAXPLAYERS+1] = {NULL_CBASEENTITY, ...};
+CBaseEntity g_pProgressBar[MAXPLAYERS + 1] = {NULL_CBASEENTITY, ...};
 
-stock void Client_ProgressBar(CBasePlayer pPlayer, float flTime = 4.0, float flBarLength = 30.0, float flBarWidth = 0.3, int Color[4] = {0, 255, 0, 255}, float flDistFromPlayer = 20.0)
+stock void Client_ProgressBar(CBasePlayer pPlayer, RGBA color, float flTime = 4.0, float flBarLength = 30.0, float flBarWidth = 0.3, float flDistFromPlayer = 20.0)
 {
 	// Always remove previous bar if there is one
-	Client_RemoveProgressBar(pPlayer.GetEntIndex());
+	Client_RemoveProgressBar(pPlayer.entindex);
 	
 	static float vecEyePosition[3];
 	
@@ -387,68 +397,61 @@ stock void Client_ProgressBar(CBasePlayer pPlayer, float flTime = 4.0, float flB
 	{
 		pPlayer.GetEyePosition(vecEyePosition);
 		
-		int iBeam = SetupBeamBar(flBarWidth, vecEyePosition, Color, 2);
-		if (IsValidEntity(iBeam))
-		{
-			int iBarBox = SetupBeamBar(flBarWidth*1.2, vecEyePosition, {255, 255, 255, 80}, 5);
-			if (IsValidEntity(iBarBox))
-			{
-				SetEntPropEnt(iBeam, Prop_Data, "m_hEffectEntity", iBarBox);
-				SetEntPropEnt(iBarBox, Prop_Data, "m_hEffectEntity", pPlayer.GetEntIndex());
-				SDKHookEx(iBarBox, SDKHook_SetTransmit, Transmit_ProgressBarBox);
-			}
+		CBeam pBeam = SetupBeamBar(flBarWidth, vecEyePosition, color, 2);
+		CBeam pBarBox = SetupBeamBar(flBarWidth * 1.2, vecEyePosition, RGBA(255, 255, 255, 80), 5);
+		
+		pBeam.SetEffectEntity(pBarBox);
+		pBarBox.SetEffectEntity(pPlayer);
+		g_pProgressBar[pPlayer.entindex] = pBeam;
 			
-			g_pProgressBar[pPlayer.GetEntIndex()] = CBaseEntity(iBeam);
-			static float vecStats[3];
-			vecStats[0] = flTime;
-			vecStats[1] = flBarLength;
-			vecStats[2] = flDistFromPlayer;
-			SetEntPropVector(iBeam, Prop_Data, "m_vecMaxs", vecStats);
-			SetEntPropFloat(iBeam, Prop_Data, "m_flLocalTime", GetGameTime() + flTime);
-			
-			SDKHookEx(iBeam, SDKHook_SetTransmit, Transmit_ProgressBar);
-		}
+		float vecStats[3];
+		vecStats[0] = flTime;
+		vecStats[1] = flBarLength;
+		vecStats[2] = flDistFromPlayer;
+		pBeam.SetMaxs(vecStats);
+		pBeam.SetLocalTime(GetGameTime() + flTime);
+
+		SDKHook(pBeam.entindex, SDKHook_SetTransmit, Transmit_ProgressBar);
+		SDKHook(pBarBox.entindex, SDKHook_SetTransmit, Transmit_ProgressBarBox);
 	}
 	
 	return;
 }
 
-stock int SetupBeamBar(float flBarWidth, float vecInitOrigin[3], int Color[4], int iRenderMode)
+stock CBeam SetupBeamBar(float flBarWidth, float vecInitOrigin[3], RGBA color, int iRenderMode)
 {
-	static int iBeam;
-	iBeam = CreateEntityByName("beam");
-	if (IsValidEntity(iBeam))
-	{
-		DispatchKeyValue(iBeam, "model", Conf.BAR_MODEL);
-		DispatchKeyValue(iBeam, "texture", "sprites/halo01.vmt");
-		SetEntProp(iBeam, Prop_Data, "m_nModelIndex", g_iBeamSprite);
-		SetEntProp(iBeam, Prop_Data, "m_nHaloIndex", 0);
-		TeleportEntity(iBeam, vecInitOrigin, NULL_VECTOR, NULL_VECTOR);
-		DispatchSpawn(iBeam);
-		ActivateEntity(iBeam);
-		
-		SetEntityRenderColor(iBeam, Color[0], Color[1], Color[2], Color[3]);
-		SetEntProp(iBeam, Prop_Data, "m_nBeamType", 1);
-		SetEntProp(iBeam, Prop_Data, "m_nBeamFlags", 0);
-		SetEntProp(iBeam, Prop_Data, "m_nNumBeamEnts", 2);
-		SetEntPropVector(iBeam, Prop_Data, "m_vecEndPos", vecInitOrigin);
-		SetEntPropFloat(iBeam, Prop_Data, "m_fWidth", flBarWidth);
-		SetEntPropFloat(iBeam, Prop_Data, "m_fEndWidth", flBarWidth);
-		SetEntPropFloat(iBeam, Prop_Data, "m_fSpeed", 0.0);
-		SetEntPropFloat(iBeam, Prop_Data,"m_flFrameRate", 0.0);
-		SetEntPropFloat(iBeam, Prop_Data,"m_flHDRColorScale", 1.0);
-		SetEntProp(iBeam, Prop_Data, "m_nDissolveType", -1);
-		SetEntProp(iBeam, Prop_Data, "m_nRenderMode", iRenderMode);
-		SetEntPropFloat(iBeam, Prop_Data, "m_fHaloScale", 0.0);
-	}
-	return iBeam;
+	CBeam pBeam = CBeam.Create();
+	int iBeam = pBeam.entindex;
+	DispatchKeyValue(iBeam, "model", Conf.BAR_MODEL);
+	DispatchKeyValue(iBeam, "texture", "sprites/halo01.vmt");
+	SetEntProp(iBeam, Prop_Data, "m_nModelIndex", g_iBeamSprite);
+	SetEntProp(iBeam, Prop_Data, "m_nHaloIndex", 0);
+	TeleportEntity(iBeam, vecInitOrigin, NULL_VECTOR, NULL_VECTOR);
+	DispatchSpawn(iBeam);
+	ActivateEntity(iBeam);
+	
+	pBeam.SetRenderColor(color);
+	SetEntProp(iBeam, Prop_Data, "m_nBeamType", 1);
+	SetEntProp(iBeam, Prop_Data, "m_nBeamFlags", 0);
+	SetEntProp(iBeam, Prop_Data, "m_nNumBeamEnts", 2);
+	SetEntPropVector(iBeam, Prop_Data, "m_vecEndPos", vecInitOrigin);
+	SetEntPropFloat(iBeam, Prop_Data, "m_fWidth", flBarWidth);
+	SetEntPropFloat(iBeam, Prop_Data, "m_fEndWidth", flBarWidth);
+	SetEntPropFloat(iBeam, Prop_Data, "m_fSpeed", 0.0);
+	SetEntPropFloat(iBeam, Prop_Data,"m_flFrameRate", 0.0);
+	SetEntPropFloat(iBeam, Prop_Data,"m_flHDRColorScale", 1.0);
+	SetEntProp(iBeam, Prop_Data, "m_nDissolveType", -1);
+	SetEntProp(iBeam, Prop_Data, "m_nRenderMode", iRenderMode);
+	SetEntPropFloat(iBeam, Prop_Data, "m_fHaloScale", 0.0);
+	
+	return pBeam;
 }
 
 stock void Client_RemoveProgressBar(int iPlayer)
 {
 	if (g_pProgressBar[iPlayer].IsValid())
 	{
-		CBaseEntity pBarBox = CBaseEntity(GetEntPropEnt(g_pProgressBar[iPlayer].GetEntIndex(), Prop_Data, "m_hEffectEntity"));
+		CBaseEntity pBarBox = CBaseEntity(GetEntPropEnt(g_pProgressBar[iPlayer].entindex, Prop_Data, "m_hEffectEntity"));
 		if (pBarBox.IsValid())
 		{
 			pBarBox.Kill();
